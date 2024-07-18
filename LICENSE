@@ -1,0 +1,74 @@
+
+# License Agreement
+
+## Personal License
+
+521 Dimensions LLC (DBA Server Side Up) grants you an ongoing, non-exclusive license to use the Docker templates (the "Templates").
+
+### Grant of License
+
+The license grants permission to one individual (the "Licensee") to access and use the Templates through their GitHub account.
+
+### Permitted Uses
+
+You are permitted to:
+- Use the Templates to create unlimited end products.
+- Modify the Templates to create derivative works for your own projects, including commercial works.
+- Use the Templates in open-source projects, provided you do not resell the Templates or derivatives.
+
+### Restrictions
+
+You are not permitted to:
+- Use the Templates to create products that allow end users to build their own end products using the Templates or derivatives.
+- Redistribute the Templates or derivatives separately from an end product.
+- Share your access to the Templates with any other individual.
+- Use the Templates to produce anything deemed by 521 Dimensions LLC to be competitive or in conflict with their business.
+- Sell or redistribute the original or modified Templates in any form, including incorporating them into a GUI or other platform for resale.
+
+### Distribution
+
+- Each user must have their own GitHub account. Sharing access or redistributing the Templates through other channels is prohibited.
+- The Templates can be used to sell self-hosted applications, provided the focus is on the application, not the Templates themselves.
+
+### Support and Updates
+
+- Community support is provided with lifetime access.
+- Report bugs or request features by opening an issue on our GitHub [here](https://github.com/serversideup/spin-template-laravel-pro/issues).
+
+### Example Usage
+
+Examples of usage **allowed** by the license:
+- Creating a personal or commercial application for yourself or a client using the Templates.
+- Modifying the Templates to suit the specific needs of a project you are working on.
+- Using the Templates as part of a self-hosted application that is sold to end users for a one-time fee, where the value of the sale is found in the application (not the templates).
+- Integrating the Templates into an open-source project where the primary purpose is clearly not to simply re-distribute the Templates, and the source code is publicly available.
+
+Examples of usage **not allowed** by the license:
+- Creating a repository of your favorite Docker templates or derivatives based on the Templates and publishing it publicly.
+- Creating a library of Docker templates using the Templates and making it available either for sale or for free.
+- Converting the Templates to another framework and making it available either for sale or for free.
+- Creating a platform or service that allows end users to generate their own Docker files using the Templates or derivatives.
+- Creating a GUI or web service that allows users to generate Docker files using the Templates or derivatives.
+- Creating a theme, template, or starter kit using the Templates and making it available either for sale or for free.
+- Creating a tool similar to Spin and offering it for sale or for free.
+- Creating any end product that is not the sole property of either yourself or a client of yours. For example, your employees or contractors can't use your company license to build their own projects.
+- Giving someone access to the Templates when they purchase a product or service from you. For example, you can't use a Personal License as a way to give someone access to the Templates when they purchase an online course from you.
+- Selling access to your account or the Templates.
+
+### Enforcement
+
+If you are found to be in violation of the license, access to your Server Side Up account will be terminated, and a refund may be issued at our discretion. When license violation is blatant and malicious (such as intentionally redistributing the Components or Templates through private warez channels), no refund will be issued.
+
+The copyright of the Components and Templates is owned by 521 Dimensions LLC. You are granted only the permissions described in this license; all other rights are reserved. 521 Dimensions LLC reserves the right to pursue legal remedies for any unauthorized use of the Components or Templates outside the scope of this license.
+
+### Liability
+
+521 Dimensions LLC's liability to you for costs, damages, or other losses arising from your use of the Templates—including third-party claims against you—is limited to a refund of your license fee. 521 Dimensions LLC may not be held liable for any consequential damages related to your use of the Templates.
+
+### Warranties and Guarantees
+
+This Agreement is governed by the laws of the State of Wisconsin, USA. Legal proceedings related to this Agreement may only be brought in the courts of Wisconsin. You agree to service of process at the e-mail address on your original order.
+
+### Questions?
+
+Unsure if your use case is covered by our license? Email us at support@serversideup.net with your questions.

@@ -1,0 +1,8 @@
+---
+title: Laravel Pro Template
+authors:
+  - Jay Rogers (@jaydrogers)
+  - Dan Pastori (@danpastori)
+description: A premium Laravel template with Horizon, Redis, Reverb, and more.
+repository: https://github.com/serversideup/spin-template-laravel-pro
+issues: https://github.com/serversideup/spin-template-laravel-pro/issues

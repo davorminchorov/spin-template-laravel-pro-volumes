@@ -1,1 +1,1 @@
-# spin-template-laravel-pro
+# Laravel Pro
