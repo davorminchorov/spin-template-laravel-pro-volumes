@@ -1,0 +1,8 @@
+services:
+
+  php:
+    depends_on:
+      - mariadb
+
+  mariadb:
+    image: mariadb:11.4

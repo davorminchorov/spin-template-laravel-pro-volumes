@@ -1,0 +1,15 @@
+services:
+  mysql:
+    networks:
+      - development
+    volumes:
+      - ./.infrastructure/volume_data/mariadb/database_data/:/var/lib/mysql
+    environment:
+        MARIADB_ROOT_PASSWORD: "rootpassword"
+        MARIADB_DATABASE: "laravel"
+        MARIADB_USER: "mysqluser"
+        MARIADB_PASSWORD: "mysqlpassword"
+    ports:
+      - target: 3306
+        published: 3306
+        mode: host
