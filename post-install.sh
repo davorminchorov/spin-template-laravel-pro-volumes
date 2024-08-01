@@ -259,7 +259,7 @@ setup_mariadb() {
 
     echo "Updating the Laravel .env and .env.example files for $service_name..."
     ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=mysql"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=mariadb"
     ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=3306"
     ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
     ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=root"
@@ -281,7 +281,17 @@ setup_mysql() {
 }
 
 setup_postgresql() {
-    merge_blocks "postgresql"
+    local service_name="postgres"
+
+    merge_blocks "$service_name"
+
+    echo "Updating the Laravel .env and .env.example files for $service_name..."
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=pgsql"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=postgres"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=5432"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=postgres"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=postgrespassword"
 }
 
 setup_queues() {
