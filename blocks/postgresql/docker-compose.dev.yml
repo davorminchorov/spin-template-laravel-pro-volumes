@@ -1,0 +1,14 @@
+services:
+  postgres:
+    networks:
+      - development
+    volumes:
+      - ./.infrastructure/volume_data/postgres/database_data/:/var/lib/postgresql/data
+    environment:
+        POSTGRES_PASSWORD: "rootpassword"
+        POSTGRES_USER: "postgres"
+        POSTGRES_DB: "laravel"
+    ports:
+      - target: 5432
+        published: 5432
+        mode: host

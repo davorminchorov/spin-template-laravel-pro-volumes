@@ -1,0 +1,8 @@
+services:
+
+  php:
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16
