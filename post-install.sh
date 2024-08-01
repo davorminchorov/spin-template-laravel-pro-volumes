@@ -54,24 +54,6 @@ display_feature_menu() {
 }
 
 ensure_line_in_file() {
-    # ensure_line_in_file: Update, insert, or add a line after a specific line in a file
-    #
-    # Usage:
-    #   ensure_line_in_file [--update|--after] file search replace
-    #
-    # Options:
-    #   --update  Update existing line or append if not found (default)
-    #   --after   Insert 'replace' after line containing 'search'
-    #
-    # Arguments:
-    #   file    Path to the file to modify
-    #   search  Text to search for in the file
-    #   replace Text to replace or insert
-    #
-    # Examples:
-    #   ensure_line_in_file .env "DB_HOST" "DB_HOST=mysql"
-    #   ensure_line_in_file --after .env "DB_HOST" "# New comment"
-
     local mode="update"
     local file=""
     local search=""
@@ -114,11 +96,7 @@ ensure_line_in_file() {
         return 1
     fi
 
-    # Escape special characters in search and replace
-    search=$(printf '%s\n' "$search" | sed -e 's/[]\/$*.^[]/\\&/g')
-    replace=$(printf '%s\n' "$replace" | sed -e 's/[\/&]/\\&/g')
-
-    # Update or insert mode
+    # Handle different modes
     if [[ $mode == "update" ]]; then
         if grep -q "$search" "$file"; then
             if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -131,21 +109,19 @@ ensure_line_in_file() {
         else
             echo "$replace" >> "$file"
         fi
-    # After mode
     elif [[ $mode == "after" ]]; then
         if grep -q "$search" "$file"; then
             if [[ "$OSTYPE" == "darwin"* ]]; then
                 # macOS
-                sed -i '' "/^$search$/a\\
+                sed -i '' "/^$search/a\\
 $replace
 " "$file"
             else
                 # Linux and others
-                sed -i "/^$search$/a $replace" "$file"
-                sed -i "s/$replace/$replace\n/" "$file"
+                sed -i "/^$search/a $replace" "$file"
             fi
         else
-            echo "Line '$search' not found in $file"
+            echo "Search string not found: $search"
             return 1
         fi
     fi
