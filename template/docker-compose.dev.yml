@@ -35,6 +35,7 @@ services:
   
   node:
     build:
+      target: development
       args:
         USER_ID: ${SPIN_USER_ID}
         GROUP_ID: ${SPIN_GROUP_ID}
