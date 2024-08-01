@@ -41,11 +41,7 @@ services:
         - web-public
 
 volumes:
-  certificates:
   database_data:
   database_custom_conf:
   database_shared:
   tunnel_ssh_host_keys:
-
-networks:
-  web-public:
