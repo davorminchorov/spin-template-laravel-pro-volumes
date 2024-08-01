@@ -1,0 +1,26 @@
+services:
+
+  php:
+    build:
+      target: ci
+      dockerfile: Dockerfile.php
+    networks:
+      - web-ci
+    volumes:
+      - .:/var/www/html/
+
+  node:
+    build:
+      dockerfile: Dockerfile.node
+    volumes:
+      - .:/usr/src/app/
+    networks: 
+      - web-ci
+
+  mailpit:
+    image: axllent/mailpit
+    networks:
+      - web-ci
+
+networks:
+  web-ci:

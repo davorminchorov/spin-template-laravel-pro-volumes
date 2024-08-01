@@ -18,6 +18,7 @@ services:
       args:
         USER_ID: ${SPIN_USER_ID}
         GROUP_ID: ${SPIN_GROUP_ID}
+      dockerfile: Dockerfile.php
     volumes:
       - .:/var/www/html/
     networks:
@@ -26,14 +27,15 @@ services:
       - traefik
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.laravel.rule=HostRegexp(`laravel.dev.test`)"
+      - "traefik.http.routers.laravel.rule=HostRegexp(`laravel.dev.test`, `{subdomain:([a-zA-Z0-9-]+)}.ngrok-free.app`)"
       - "traefik.http.routers.laravel.entrypoints=websecure"
       - "traefik.http.routers.laravel.tls=true"
-      - "traefik.http.services.laravel.loadbalancer.server.port=8080"
-      - "traefik.http.services.laravel.loadbalancer.server.scheme=http"
+      - "traefik.http.services.laravel.loadbalancer.server.port=8443"
+      - "traefik.http.services.laravel.loadbalancer.server.scheme=https"
   
   node:
-    image: node:20
+    build:
+      dockerfile: Dockerfile.node
     volumes:
       - .:/usr/src/app/
     working_dir: /usr/src/app/

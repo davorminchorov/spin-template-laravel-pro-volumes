@@ -1,0 +1,16 @@
+FROM node:20
+
+# We can pass USER_ID and GROUP_ID as build arguments
+# to ensure the node user has the same UID and GID
+# as the user running Docker.
+ARG USER_ID
+ARG GROUP_ID
+
+# Switch to root so we can set the user ID and group ID
+USER root
+
+# Set the user ID and group ID for the node user
+RUN groupmod -g $GROUP_ID node && usermod -u $USER_ID -g $GROUP_ID node
+
+# Drop privileges back to node user
+USER node
