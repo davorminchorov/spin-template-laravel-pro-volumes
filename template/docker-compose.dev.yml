@@ -27,7 +27,7 @@ services:
       - traefik
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.laravel.rule=HostRegexp(`laravel.dev.test`, `{subdomain:([a-zA-Z0-9-]+)}.ngrok-free.app`)"
+      - "traefik.http.routers.laravel.rule=Host(`laravel.dev.test`) || HostRegexp(`{subdomain:([a-zA-Z0-9-]+)}.ngrok-free.app`)"
       - "traefik.http.routers.laravel.entrypoints=websecure"
       - "traefik.http.routers.laravel.tls=true"
       - "traefik.http.services.laravel.loadbalancer.server.port=8443"
