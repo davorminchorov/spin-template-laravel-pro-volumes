@@ -258,12 +258,12 @@ setup_mariadb() {
     merge_blocks "$service_name"
 
     echo "Updating the Laravel .env and .env.example files for $service_name..."
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_CONNECTION" "DB_CONNECTION=mysql"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_HOST" "DB_HOST=mysql"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_PORT" "DB_PORT=3306"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_DATABASE" "DB_DATABASE=laravel"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_USERNAME" "DB_USERNAME=root"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=mysql"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=3306"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=root"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
 }
 
 setup_mysql() {
@@ -273,12 +273,12 @@ setup_mysql() {
     merge_blocks "$service_name"
 
     echo "Updating the Laravel .env and .env.example files for $service_name..."
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_CONNECTION" "DB_CONNECTION=mysql"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_HOST" "DB_HOST=mysql"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_PORT" "DB_PORT=3306"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_DATABASE" "DB_DATABASE=laravel"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_USERNAME" "DB_USERNAME=root"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=mysql"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=3306"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=root"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
 }
 
 setup_postgresql() {
@@ -335,8 +335,8 @@ setup_sqlite() {
         mkdir -p "$project_dir/.infrastructure/volume_data/sqlite"
 
         echo "Updating the Laravel .env and .env.example files for $service_name..."
-        ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_CONNECTION" "DB_CONNECTION=sqlite"
-        ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" --after "DB_CONNECTION" "DB_DATABASE=/var/www/html/.infrastructure/volume_data/sqlite/database.sqlite"
+        ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=sqlite"
+        ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" --after "DB_CONNECTION" "DB_DATABASE=/var/www/html/.infrastructure/volume_data/sqlite/database.sqlite"
 
         # Run the migrations to create the SQLite database
         docker run --rm -v "$project_dir:/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" $docker_image php /var/www/html/artisan migrate --force
