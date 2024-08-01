@@ -71,7 +71,7 @@ ensure_line_in_file() {
     # Examples:
     #   ensure_line_in_file .env "DB_HOST" "DB_HOST=mysql"
     #   ensure_line_in_file --after .env "DB_HOST" "# New comment"
-     local mode="update"
+    local mode="update"
     local file=""
     local search=""
     local replace=""
@@ -113,6 +113,10 @@ ensure_line_in_file() {
         return 1
     fi
 
+    # Escape special characters in search and replace
+    search=$(printf '%s\n' "$search" | sed -e 's/[]\/$*.^[]/\\&/g')
+    replace=$(printf '%s\n' "$replace" | sed -e 's/[\/&]/\\&/g')
+
     # Update or insert mode
     if [[ $mode == "update" ]]; then
         if grep -q "$search" "$file"; then
@@ -131,10 +135,11 @@ ensure_line_in_file() {
         if grep -q "$search" "$file"; then
             if [[ "$OSTYPE" == "darwin"* ]]; then
                 # macOS
-                sed -i '' "/$search/s/$/\n$replace/" "$file"
+                sed -i '' "/$search/a\\
+$replace" "$file"
             else
                 # Linux and others
-                sed -i "/$search/s/$/\n$replace/" "$file"
+                sed -i "/$search/a\\$replace" "$file"
             fi
         else
             echo "Line '$search' not found in $file"
