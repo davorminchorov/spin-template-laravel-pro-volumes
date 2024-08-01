@@ -31,8 +31,16 @@ You are not permitted to:
 
 ### Support and Updates
 
-- Community support is provided with lifetime access.
-- Report bugs or request features by opening an issue on our GitHub [here](https://github.com/serversideup/spin-template-laravel-pro/issues).
+- Community-based support is available through our private GitHub Discussions forum, which you can access with your license.
+- This forum allows users to ask questions, share knowledge, and discuss best practices.
+- While we strive to maintain an active and helpful community, please note:
+  - Responses are provided on a best-effort basis by community members and our team.
+  - We do not offer guaranteed response times or Service Level Agreements (SLAs).
+  - One-on-one support, including screen sharing or direct troubleshooting of your specific setup, is not included.
+- For bug reports or feature requests, please open an issue on our GitHub repository [here](https://github.com/serversideup/spin-template-laravel-pro/issues).
+- We regularly update the Templates, and you will have access to these updates for the lifetime of your license.
+
+We encourage users to actively participate in the community, both in seeking and providing help. This collaborative environment benefits everyone and helps improve the overall quality of the Templates.
 
 ### Example Usage
 
