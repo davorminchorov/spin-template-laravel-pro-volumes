@@ -53,6 +53,29 @@ display_feature_menu() {
     echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue or skip."
 }
 
+ensure_line_in_file() {
+    local file="$1"
+    local search="$2"
+    local replace="$3"
+
+    if [ ! -f "$file" ]; then
+        echo "File not found: $file"
+        return 1
+    fi
+
+    if grep -q "$search" "$file"; then
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            sed -i '' "s|.*$search.*|$replace|" "$file"
+        else
+            # Linux and others
+            sed -i "s|.*$search.*|$replace|" "$file"
+        fi
+    else
+        echo "$replace" >> "$file"
+    fi
+}
+
 merge_blocks() {
     local service_name=$1
     local blocks_dir="$template_src_dir/blocks/$service_name"
@@ -177,6 +200,16 @@ setup_mariadb() {
 
 setup_mysql() {
     merge_blocks "mysql"
+
+    # Update the .env file
+    local laravel_env_file="$project_dir/.env"
+    echo "Updating the Laravel .env file for MySQL..."
+    ensure_line_in_file "$laravel_env_file" "DB_CONNECTION" "DB_CONNECTION=mysql"
+    ensure_line_in_file "$laravel_env_file" "DB_HOST" "DB_HOST=mysql"
+    ensure_line_in_file "$laravel_env_file" "DB_PORT" "DB_PORT=3306"
+    ensure_line_in_file "$laravel_env_file" "DB_DATABASE" "DB_DATABASE=laravel"
+    ensure_line_in_file "$laravel_env_file" "DB_USERNAME" "DB_USERNAME=root"
+    ensure_line_in_file "$laravel_env_file" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
 }
 
 setup_postgresql() {
