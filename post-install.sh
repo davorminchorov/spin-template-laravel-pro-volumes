@@ -161,10 +161,6 @@ process_selections() {
     echo "Service set up complete!"
 }
 
-run_php_artisan_migrate() {
-        docker run --rm -v "$project_dir:/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" $docker_image php /var/www/html/artisan migrate --force
-}
-
 set_colors() {
     if [[ -t 1 ]]; then
         RAINBOW="
@@ -274,7 +270,8 @@ DB_DATABASE=/var/www/html/.infrastructure/volume_data/sqlite/database.sqlite
             sed -i '/^DB_CONNECTION=sqlite$/a DB_DATABASE=/var/www/html/.infrastructure/volume_data/sqlite/database.sqlite' "$project_dir/.env"
             sed -i 's/database.sqlite/database.sqlite\n/' "$project_dir/.env"
         fi
-        run_php_artisan_migrate
+        
+        docker run --rm -v "$project_dir:/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" $docker_image php /var/www/html/artisan migrate --force
     fi
 }
 
