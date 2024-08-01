@@ -7,8 +7,8 @@ services:
     environment:
         MYSQL_ROOT_PASSWORD: "rootpassword"
         MYSQL_DATABASE: "laravel"
-        MYSQL_USER: "root"
-        MYSQL_PASSWORD: "rootpassword"
+        MYSQL_USER: "mysqluser"
+        MYSQL_PASSWORD: "mysqlpassword"
     ports:
       - target: 3306
         published: 3306
