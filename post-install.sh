@@ -55,7 +55,7 @@ display_feature_menu() {
 
 ensure_line_in_file() {
     local mode="update"
-    local file=""
+    local files=()
     local search=""
     local replace=""
     local after=""
@@ -71,10 +71,13 @@ ensure_line_in_file() {
                 mode="after"
                 shift
                 ;;
+            --file)
+                shift
+                files+=("$1")
+                shift
+                ;;
             *)
-                if [[ -z $file ]]; then
-                    file="$1"
-                elif [[ -z $search ]]; then
+                if [[ -z $search ]]; then
                     search="$1"
                 elif [[ -z $replace ]]; then
                     replace="$1"
@@ -90,41 +93,49 @@ ensure_line_in_file() {
         esac
     done
 
-    # Check if file exists
-    if [ ! -f "$file" ]; then
-        echo "File not found: $file"
+    # Check if at least one file is specified
+    if [ ${#files[@]} -eq 0 ]; then
+        echo "No files specified. Use --file argument to specify files."
         return 1
     fi
 
-    # Handle different modes
-    if [[ $mode == "update" ]]; then
-        if grep -q "$search" "$file"; then
-            if [[ "$OSTYPE" == "darwin"* ]]; then
-                # macOS
-                sed -i '' "s|.*$search.*|$replace|" "$file"
-            else
-                # Linux and others
-                sed -i "s|.*$search.*|$replace|" "$file"
-            fi
-        else
-            echo "$replace" >> "$file"
+    # Process each file
+    for file in "${files[@]}"; do
+        # Check if file exists
+        if [ ! -f "$file" ]; then
+            echo "File not found: $file"
+            continue
         fi
-    elif [[ $mode == "after" ]]; then
-        if grep -q "$search" "$file"; then
-            if [[ "$OSTYPE" == "darwin"* ]]; then
-                # macOS
-                sed -i '' "/^$search/a\\
+
+        # Handle different modes
+        if [[ $mode == "update" ]]; then
+            if grep -q "$search" "$file"; then
+                if [[ "$OSTYPE" == "darwin"* ]]; then
+                    # macOS
+                    sed -i '' "s|.*$search.*|$replace|" "$file"
+                else
+                    # Linux and others
+                    sed -i "s|.*$search.*|$replace|" "$file"
+                fi
+            else
+                echo "$replace" >> "$file"
+            fi
+        elif [[ $mode == "after" ]]; then
+            if grep -q "$search" "$file"; then
+                if [[ "$OSTYPE" == "darwin"* ]]; then
+                    # macOS
+                    sed -i '' "/^$search/a\\
 $replace
 " "$file"
+                else
+                    # Linux and others
+                    sed -i "/^$search/a $replace" "$file"
+                fi
             else
-                # Linux and others
-                sed -i "/^$search/a $replace" "$file"
+                echo "Search string not found in $file: $search"
             fi
-        else
-            echo "Search string not found: $search"
-            return 1
         fi
-    fi
+    done
 }
 
 merge_blocks() {
@@ -243,17 +254,16 @@ setup_horizon() {
 
 setup_mariadb() {
     local service_name="mariadb"
-    local laravel_env_file="$project_dir/.env"
 
     merge_blocks "$service_name"
 
-    echo "Updating the Laravel .env file for $service_name..."
-    ensure_line_in_file "$laravel_env_file" "DB_CONNECTION" "DB_CONNECTION=mysql"
-    ensure_line_in_file "$laravel_env_file" "DB_HOST" "DB_HOST=mysql"
-    ensure_line_in_file "$laravel_env_file" "DB_PORT" "DB_PORT=3306"
-    ensure_line_in_file "$laravel_env_file" "DB_DATABASE" "DB_DATABASE=laravel"
-    ensure_line_in_file "$laravel_env_file" "DB_USERNAME" "DB_USERNAME=root"
-    ensure_line_in_file "$laravel_env_file" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
+    echo "Updating the Laravel .env and .env.example files for $service_name..."
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_CONNECTION" "DB_CONNECTION=mysql"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_HOST" "DB_HOST=mysql"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_PORT" "DB_PORT=3306"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_DATABASE" "DB_DATABASE=laravel"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_USERNAME" "DB_USERNAME=root"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
 }
 
 setup_mysql() {
@@ -262,13 +272,13 @@ setup_mysql() {
 
     merge_blocks "$service_name"
 
-    echo "Updating the Laravel .env file for $service_name..."
-    ensure_line_in_file "$laravel_env_file" "DB_CONNECTION" "DB_CONNECTION=mysql"
-    ensure_line_in_file "$laravel_env_file" "DB_HOST" "DB_HOST=mysql"
-    ensure_line_in_file "$laravel_env_file" "DB_PORT" "DB_PORT=3306"
-    ensure_line_in_file "$laravel_env_file" "DB_DATABASE" "DB_DATABASE=laravel"
-    ensure_line_in_file "$laravel_env_file" "DB_USERNAME" "DB_USERNAME=root"
-    ensure_line_in_file "$laravel_env_file" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
+    echo "Updating the Laravel .env and .env.example files for $service_name..."
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_CONNECTION" "DB_CONNECTION=mysql"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_HOST" "DB_HOST=mysql"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_PORT" "DB_PORT=3306"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_DATABASE" "DB_DATABASE=laravel"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_USERNAME" "DB_USERNAME=root"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
 }
 
 setup_postgresql() {
@@ -324,9 +334,9 @@ setup_sqlite() {
         # Create the SQLite database folder
         mkdir -p "$project_dir/.infrastructure/volume_data/sqlite"
 
-        echo "Updating the Laravel .env file for $service_name..."
-        ensure_line_in_file "$laravel_env_file" "DB_CONNECTION" "DB_CONNECTION=sqlite"
-        ensure_line_in_file --after "$laravel_env_file" "DB_CONNECTION" "DB_DATABASE=/var/www/html/.infrastructure/volume_data/sqlite/database.sqlite"
+        echo "Updating the Laravel .env and .env.example files for $service_name..."
+        ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" "DB_CONNECTION" "DB_CONNECTION=sqlite"
+        ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.exmaple" --after "DB_CONNECTION" "DB_DATABASE=/var/www/html/.infrastructure/volume_data/sqlite/database.sqlite"
 
         # Run the migrations to create the SQLite database
         docker run --rm -v "$project_dir:/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" $docker_image php /var/www/html/artisan migrate --force
