@@ -135,7 +135,7 @@ ensure_line_in_file() {
 $replace" "$file"
             else
                 # Linux and others
-                sed -i "/$search/a $replace" "$file"
+                sed -i "/$search/a\\$replace" "$file"
             fi
         else
             echo "Line '$search' not found in $file"
