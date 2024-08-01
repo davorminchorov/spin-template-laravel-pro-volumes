@@ -13,9 +13,9 @@ services:
         constraints:
           - node.role==manager
     volumes:
-      - database_data:/var/lib/mysql
-      - database_custom_conf:/etc/mysql/conf.d
-      - database_shared:/shared
+      - mariadb_data:/var/lib/mysql
+      - mariadb_custom_conf:/etc/mysql/conf.d
+      - mariadb_shared:/shared
 
   ssh:
     # We use an SSH image so we can securely tunnel into the Docker network with 
@@ -41,7 +41,7 @@ services:
         - web-public
 
 volumes:
-  database_data:
-  database_custom_conf:
-  database_shared:
+  mariadb_data:
+  mariadb_custom_conf:
+  mariadb_shared:
   tunnel_ssh_host_keys:

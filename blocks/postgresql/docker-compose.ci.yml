@@ -1,9 +1,9 @@
 services:
   postgres:
     environment:
-        POSTGRES_PASSWORD: "rootpassword"
-        POSTGRES_USER: "postgres"
         POSTGRES_DB: "laravel"
+        POSTGRES_USER: "postgres"
+        POSTGRES_PASSWORD: "postgrespassword"
 
   php:
     depends_on:

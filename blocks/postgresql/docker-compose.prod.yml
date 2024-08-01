@@ -1,6 +1,6 @@
 services:
 
-  mysql:
+  postgres:
     networks:
       - web-public
     environment:
@@ -12,8 +12,8 @@ services:
         constraints:
           - node.role==manager
     volumes:
-      - database_data:/var/lib/postgresql/data
-      - database_shared:/shared
+      - postgres_data:/var/lib/postgresql/data
+      - postgres_shared:/shared
 
   ssh:
     # We use an SSH image so we can securely tunnel into the Docker network with 
@@ -39,6 +39,6 @@ services:
         - web-public
 
 volumes:
-  database_data:
-  database_shared:
+  postgres_data:
+  postgres_shared:
   tunnel_ssh_host_keys:
