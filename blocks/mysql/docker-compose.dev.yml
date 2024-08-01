@@ -1,0 +1,15 @@
+services:
+  mysql:
+    networks:
+      - development
+    volumes:
+      - ./.infrastructure/volume_data/mysql/database_data/:/var/lib/mysql
+    environment:
+        MYSQL_ROOT_PASSWORD: "rootpassword"
+        MYSQL_DATABASE: "laravel"
+        MYSQL_USER: "root"
+        MYSQL_PASSWORD: "rootpassword"
+    ports:
+      - target: 3306
+        published: 3306
+        mode: host
