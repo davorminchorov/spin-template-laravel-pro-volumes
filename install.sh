@@ -6,8 +6,8 @@ set -e # Exit on error
 ###############################################
 
 # Make sure the image is up to date before running
-docker_image="serversideup/php:8.3-cli"
-docker pull $docker_image
+php_docker_image="serversideup/php:8.3-cli"
+docker pull $php_docker_image
 
 # Save anything passed to the script as an array
 framework_args=("$@")
@@ -39,7 +39,7 @@ export SPIN_PROJECT_DIRECTORY
 # Default function to run for new projects
 new(){
   # Use the current working directory for our install command
-  docker run --rm -v "$(pwd):/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" $docker_image composer --no-cache create-project laravel/laravel "${framework_args[@]}"
+  docker run --rm -v "$(pwd):/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" $php_docker_image composer --no-cache create-project laravel/laravel "${framework_args[@]}"
 
   init
 }
@@ -47,7 +47,7 @@ new(){
 # Required function name "init", used in "spin init" command
 init(){
   # Install the spin package
-  docker run --rm -v "$SPIN_PROJECT_DIRECTORY:/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" $docker_image composer --verbose --working-dir=/var/www/html/ require serversideup/spin:dev-75-spin-deploy-allow-deployments-without-cicd --dev
+  docker run --rm -v "$SPIN_PROJECT_DIRECTORY:/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" $php_docker_image composer --verbose --working-dir=/var/www/html/ require serversideup/spin:dev-75-spin-deploy-allow-deployments-without-cicd --dev
 }
 
 ###############################################

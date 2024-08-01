@@ -5,7 +5,7 @@ SPIN_ACTION=${SPIN_ACTION:-"install"}
 
 # Set dependency versions
 yq_version="4.44.2"
-docker_image="serversideup/php:8.3-cli"
+php_docker_image="serversideup/php:8.3-cli"
 
 # Initialize the service variables
 horizon=""
@@ -268,7 +268,6 @@ setup_mariadb() {
 
 setup_mysql() {
     local service_name="mysql"
-    local laravel_env_file="$project_dir/.env"
 
     merge_blocks "$service_name"
 
@@ -303,7 +302,6 @@ setup_scheduler() {
 
 setup_sqlite() {
     local service_name="sqlite"
-    local laravel_env_file="$project_dir/.env"
     local existing_sqlite_detected=false
     local init_sqlite=true
 
@@ -339,7 +337,7 @@ setup_sqlite() {
         ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" --after "DB_CONNECTION" "DB_DATABASE=/var/www/html/.infrastructure/volume_data/sqlite/database.sqlite"
 
         # Run the migrations to create the SQLite database
-        docker run --rm -v "$project_dir:/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" $docker_image php /var/www/html/artisan migrate --force
+        docker run --rm -v "$project_dir:/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" $php_docker_image php /var/www/html/artisan migrate --force
     fi
 }
 
@@ -352,7 +350,7 @@ set_colors
 # Feature selection loop
 while true; do
     display_feature_menu
-    read -s -n 1 key
+    read -s -r -n 1 key
     case $key in
         1) 
             if [[ $horizon ]]; then
