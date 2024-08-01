@@ -1,0 +1,8 @@
+services:
+
+  redis:
+    command: "redis-server --appendonly yes --requirepass redispassword"
+    volumes:
+      - ./.infrastructure/volume_data/redis/data:/data
+    networks:
+      - development
