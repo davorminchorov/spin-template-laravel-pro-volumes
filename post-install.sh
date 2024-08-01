@@ -56,7 +56,6 @@ display_feature_menu() {
 merge_blocks() {
     local service_name=$1
     local blocks_dir="$template_src_dir/blocks/$service_name"
-    local yq_container_name="spin_yq_$(date +%s)"
 
     # Clean up the container when the script exits
     trap "docker rm -f $yq_container_name > /dev/null 2>&1" EXIT
@@ -88,8 +87,8 @@ merge_blocks() {
         local rel_destination=${destination#$project_dir/}
         
         # Merge the block into the destination file, appending values
-        docker run --name "$yq_container_name" \
-            --user $user_id \
+        docker run --rm \
+            --user "$user_id" \
             -v "${template_src_dir}:/src_dir" \
             -v "${project_dir}:/dest_dir" \
             "mikefarah/yq:$yq_version" eval-all \
