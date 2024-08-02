@@ -1,0 +1,10 @@
+services:
+
+  schedule:
+    build:
+      target: ci
+      dockerfile: Dockerfile.php
+    volumes:
+      - .:/var/www/html/
+    networks:
+      - ci

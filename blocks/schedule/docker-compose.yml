@@ -1,0 +1,5 @@
+services:
+
+  schedule:
+    entrypoint: ''
+    command: ["php", "/var/www/html/artisan", "schedule:work"]

@@ -11,7 +11,7 @@ php_docker_image="serversideup/php:8.3-cli"
 horizon=""
 queues=""
 reverb=""
-scheduler=""
+schedule=""
 sqlite=""
 mysql=""
 mariadb=""
@@ -48,7 +48,7 @@ display_feature_menu() {
     echo -e "${horizon:+$BOLD$BLUE}1) Horizon${RESET}"
     echo -e "${queues:+$BOLD$BLUE}2) Queues (without Redis)${RESET}"
     echo -e "${reverb:+$BOLD$BLUE}3) Reverb${RESET}"
-    echo -e "${scheduler:+$BOLD$BLUE}4) Task Scheduler${RESET}"
+    echo -e "${schedule:+$BOLD$BLUE}4) Task Schedule${RESET}"
     echo "Press a number to select/deselect."
     echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue or skip."
 }
@@ -188,7 +188,7 @@ merge_blocks() {
 process_selections() {
     echo "Processing your selections..."
     
-    for selection in sqlite mysql mariadb postgresql redis horizon queues reverb scheduler; do
+    for selection in sqlite mysql mariadb postgresql redis horizon queues reverb schedule; do
         case "$selection" in
             sqlite)
                 [[ $sqlite ]] && setup_sqlite
@@ -214,8 +214,8 @@ process_selections() {
             reverb)
                 [[ $reverb ]] && setup_reverb
                 ;;
-            scheduler)
-                [[ $scheduler ]] && setup_scheduler
+            schedule)
+                [[ $schedule ]] && setup_schedule
                 ;;
         esac
     done
@@ -312,8 +312,8 @@ setup_reverb() {
     merge_blocks "reverb"
 }
 
-setup_scheduler() {
-    merge_blocks "scheduler"
+setup_schedule() {
+    merge_blocks "schedule"
 }
 
 setup_sqlite() {
@@ -379,7 +379,7 @@ while true; do
             ;;
         2) [[ $queues ]] && queues="" || queues="1" ;;
         3) [[ $reverb ]] && reverb="" || reverb="1" ;;
-        4) [[ $scheduler ]] && scheduler="" || scheduler="1" ;;
+        4) [[ $schedule ]] && schedule="" || schedule="1" ;;
         '') break ;;
     esac
 done
