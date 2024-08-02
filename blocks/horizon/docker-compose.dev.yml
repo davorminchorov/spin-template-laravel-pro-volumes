@@ -7,23 +7,7 @@ services:
         USER_ID: ${SPIN_USER_ID}
         GROUP_ID: ${SPIN_GROUP_ID}
       dockerfile: Dockerfile.php
-    entrypoint: ''
-    command: ["php", "/var/www/html/artisan", "horizon"]
     volumes:
       - .:/var/www/html/
-    environment:
-      PHP_FPM_POOL_NAME: "laravel_horizon"
     networks:
       - development
-    healthcheck:
-      test: ["CMD", "php", "/var/www/html/artisan", "horizon:status"]
-      interval: 1m30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-      start_interval: 5s
-    labels:
-      - "traefik.enable=false"
-    depends_on:
-      - redis
-      - php
