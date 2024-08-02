@@ -1,6 +1,6 @@
 services:
 
-  queues:
+  reverb:
     build:
       target: ci
       dockerfile: Dockerfile.php
