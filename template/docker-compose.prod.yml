@@ -58,7 +58,7 @@ services:
         window: 120s
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.laravel-web.rule=Host(`myapp.example.com`)"
+        - "traefik.http.routers.laravel-web.rule=Host(`${SPIN_APP_DOMAIN}`)"
         - "traefik.http.routers.laravel-web.entrypoints=websecure"
         - "traefik.http.routers.laravel-web.tls=true"
         - "traefik.http.routers.laravel-web.tls.certresolver=letsencryptresolver"
