@@ -6,5 +6,6 @@ services:
   php:
     environment:
       SSL_MODE: "full"
+      PHP_FPM_POOL_NAME: "laravel_web"
     depends_on:
       - traefik
