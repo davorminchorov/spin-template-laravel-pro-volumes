@@ -2,6 +2,8 @@ services:
 
   queues:
     image: ${SPIN_IMAGE_NAME} # 👈 Change this if you're not using `spin deploy`
+    entrypoint: ''
+    command: ["php", "/var/www/html/artisan", "queue:work", "--tries=3"]
     environment:
       PHP_FPM_POOL_NAME: "laravel_queue"
     networks:
