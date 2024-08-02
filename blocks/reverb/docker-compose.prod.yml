@@ -24,3 +24,11 @@ services:
         delay: 10s
         max_attempts: 3
         window: 120s
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.laravel-reverb.rule=Host(`myapp.example.com`) && (PathPrefix(`/app`) || PathPrefix(`/apps`)"
+        - "traefik.http.routers.laravel-reverb.entrypoints=websecure"
+        - "traefik.http.routers.laravel-reverb.tls=true"
+        - "traefik.http.routers.laravel-reverb.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.laravel-reverb.loadbalancer.server.port=8080"
+        - "traefik.http.services.laravel-reverb.loadbalancer.server.scheme=http"
