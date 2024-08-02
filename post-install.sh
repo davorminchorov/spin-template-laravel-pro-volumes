@@ -299,7 +299,13 @@ setup_queues() {
 }
 
 setup_redis() {
-    merge_blocks "redis"
+    local service_name="redis"
+
+    merge_blocks "$service_name"
+
+    echo "Updating the Laravel .env and .env.example files for $service_name..."
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "REDIS_HOST" "REDIS_HOST=redis"
+    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "REDIS_PASSWORD" "REDIS_PASSWORD=redispassword"
 }
 
 setup_reverb() {
