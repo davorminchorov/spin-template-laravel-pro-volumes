@@ -2,10 +2,10 @@
 
 # Capture Spin Variables
 SPIN_ACTION=${SPIN_ACTION:-"install"}
+SPIN_PHP_DOCKER_IMAGE="${SPIN_PHP_DOCKER_IMAGE:-serversideup/php:8.3-cli}"
 
 # Set dependency versions
 yq_version="4.44.2"
-php_docker_image="serversideup/php:8.3-cli"
 
 # Initialize the service variables
 horizon=""
@@ -353,7 +353,7 @@ setup_sqlite() {
         ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" --after "DB_CONNECTION" "DB_DATABASE=/var/www/html/.infrastructure/volume_data/sqlite/database.sqlite"
 
         # Run the migrations to create the SQLite database
-        docker run --rm -v "$project_dir:/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" $php_docker_image php /var/www/html/artisan migrate --force
+        docker run --rm -v "$project_dir:/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" "$SPIN_PHP_DOCKER_IMAGE" php /var/www/html/artisan migrate --force
     fi
 }
 
