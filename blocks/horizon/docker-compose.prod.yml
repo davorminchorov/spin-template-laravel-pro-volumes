@@ -1,0 +1,40 @@
+services:
+
+  horizon:
+    image: ${SPIN_IMAGE_NAME} # 👈 Change this if you're not using `spin deploy`
+    entrypoint: ''
+    command: ["php", "/var/www/html/artisan", "horizon"]
+    stop_grace_period: 30s
+    environment:
+      PHP_OPCACHE_ENABLE: "1"
+      PHP_FPM_POOL_NAME: "laravel_horizon"
+    networks:
+      - web-public
+    volumes:
+      - "storage_private:/var/www/html/storage/app/private/"
+      - "storage_public:/var/www/html/storage/app/public/"
+      - "storage_sessions:/var/www/html/storage/framework/sessions"
+      - "storage_logs:/var/www/html/storage/logs"
+    healthcheck:
+      test: ["CMD", "php", "/var/www/html/artisan", "horizon:status"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+      start_interval: 5s
+    deploy:
+      update_config:
+        failure_action: rollback
+        parallelism: 1
+        delay: 5s
+        order: stop-first
+      rollback_config:
+        parallelism: 0
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 10s
+        max_attempts: 3
+        window: 120s
+      labels:
+        - "traefik.enable=false"
