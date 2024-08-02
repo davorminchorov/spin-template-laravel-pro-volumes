@@ -53,91 +53,6 @@ display_feature_menu() {
     echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue or skip."
 }
 
-ensure_line_in_file() {
-    local mode="update"
-    local files=()
-    local search=""
-    local replace=""
-    local after=""
-
-    # Parse arguments
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --update)
-                mode="update"
-                shift
-                ;;
-            --after)
-                mode="after"
-                shift
-                ;;
-            --file)
-                shift
-                files+=("$1")
-                shift
-                ;;
-            *)
-                if [[ -z $search ]]; then
-                    search="$1"
-                elif [[ -z $replace ]]; then
-                    replace="$1"
-                elif [[ $mode == "after" && -z $after ]]; then
-                    after="$replace"
-                    replace="$1"
-                else
-                    echo "Too many arguments"
-                    return 1
-                fi
-                shift
-                ;;
-        esac
-    done
-
-    # Check if at least one file is specified
-    if [ ${#files[@]} -eq 0 ]; then
-        echo "No files specified. Use --file argument to specify files."
-        return 1
-    fi
-
-    # Process each file
-    for file in "${files[@]}"; do
-        # Check if file exists
-        if [ ! -f "$file" ]; then
-            echo "File not found: $file"
-            continue
-        fi
-
-        # Handle different modes
-        if [[ $mode == "update" ]]; then
-            if grep -q "$search" "$file"; then
-                if [[ "$OSTYPE" == "darwin"* ]]; then
-                    # macOS
-                    sed -i '' "s|.*$search.*|$replace|" "$file"
-                else
-                    # Linux and others
-                    sed -i "s|.*$search.*|$replace|" "$file"
-                fi
-            else
-                echo "$replace" >> "$file"
-            fi
-        elif [[ $mode == "after" ]]; then
-            if grep -q "$search" "$file"; then
-                if [[ "$OSTYPE" == "darwin"* ]]; then
-                    # macOS
-                    sed -i '' "/^$search/a\\
-$replace
-" "$file"
-                else
-                    # Linux and others
-                    sed -i "/^$search/a $replace" "$file"
-                fi
-            else
-                echo "Search string not found in $file: $search"
-            fi
-        fi
-    done
-}
-
 merge_blocks() {
     local service_name=$1
     local blocks_dir="$template_src_dir/blocks/$service_name"
@@ -258,12 +173,12 @@ setup_mariadb() {
     merge_blocks "$service_name"
 
     echo "$service_name: Updating the Laravel .env and .env.example files..."
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=mariadb"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=3306"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=root"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=mariadb"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=3306"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=root"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
 }
 
 setup_mysql() {
@@ -272,12 +187,12 @@ setup_mysql() {
     merge_blocks "$service_name"
 
     echo "$service_name: Updating the Laravel .env and .env.example files..."
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=mysql"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=3306"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=root"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=mysql"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=3306"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=root"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
 }
 
 setup_postgresql() {
@@ -286,12 +201,12 @@ setup_postgresql() {
     merge_blocks "$service_name"
 
     echo "$service_name: Updating the Laravel .env and .env.example files..."
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=pgsql"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=postgres"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=5432"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=postgres"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=postgrespassword"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=pgsql"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=postgres"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=5432"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=postgres"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=postgrespassword"
 }
 
 setup_queues() {
@@ -304,8 +219,8 @@ setup_redis() {
     merge_blocks "$service_name"
 
     echo "$service_name: Updating the Laravel .env and .env.example files..."
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "REDIS_HOST" "REDIS_HOST=redis"
-    ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "REDIS_PASSWORD" "REDIS_PASSWORD=redispassword"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "REDIS_HOST" "REDIS_HOST=redis"
+    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "REDIS_PASSWORD" "REDIS_PASSWORD=redispassword"
 }
 
 setup_reverb() {
@@ -349,8 +264,8 @@ setup_sqlite() {
         mkdir -p "$project_dir/.infrastructure/volume_data/sqlite"
 
         echo "$service_name: Updating the Laravel .env and .env.example files..."
-        ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=sqlite"
-        ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" --after "DB_CONNECTION" "DB_DATABASE=/var/www/html/.infrastructure/volume_data/sqlite/database.sqlite"
+        line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=sqlite"
+        line_in_file --after --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_DATABASE=/var/www/html/.infrastructure/volume_data/sqlite/database.sqlite"
 
         # Run the migrations to create the SQLite database
         docker run --rm -v "$project_dir:/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" "$SPIN_PHP_DOCKER_IMAGE" php /var/www/html/artisan migrate --force
