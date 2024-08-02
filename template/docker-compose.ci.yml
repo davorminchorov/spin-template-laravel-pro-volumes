@@ -5,7 +5,7 @@ services:
       target: ci
       dockerfile: Dockerfile.php
     networks:
-      - web-ci
+      - ci
     volumes:
       - .:/var/www/html/
 
@@ -16,12 +16,12 @@ services:
     volumes:
       - .:/usr/src/app/
     networks: 
-      - web-ci
+      - ci
 
   mailpit:
     image: axllent/mailpit
     networks:
-      - web-ci
+      - ci
 
 networks:
-  web-ci:
+  ci:
