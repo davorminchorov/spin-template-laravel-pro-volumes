@@ -1,5 +1,5 @@
 services:
-  mysql:
+  mariadb:
     networks:
       - development
     volumes:

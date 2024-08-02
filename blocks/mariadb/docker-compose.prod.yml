@@ -1,6 +1,6 @@
 services:
 
-  mysql:
+  mariadb:
     networks:
       - web-public
     environment:
