@@ -1,7 +1,7 @@
 services:
 
   horizon:
-    image: ${SPIN_IMAGE_NAME} # 👈 Change this if you're not using `spin deploy`
+    image: ${SPIN_IMAGE_DOCKERFILE_PHP} # 👈 Change this if you're not using `spin deploy`
     stop_grace_period: 30s
     networks:
       - web-public

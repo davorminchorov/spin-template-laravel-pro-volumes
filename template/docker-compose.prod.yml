@@ -29,7 +29,7 @@ services:
         target: /etc/traefik/traefik.yml
 
   php:
-    image: ${SPIN_IMAGE_NAME} # 👈 Change this if you're not using `spin deploy`
+    image: ${SPIN_IMAGE_DOCKERFILE_PHP} # 👈 Change this if you're not using `spin deploy`
     environment:
       AUTORUN_ENABLED: "true" # 👈 Remove this line if you don't want Laravel Automations
       APP_ENV: "${SPIN_DEPLOYMENT_ENVIRONMENT}" # 👈 Remove this if you're not using `spin deploy`
