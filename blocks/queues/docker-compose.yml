@@ -1,7 +1,5 @@
 services:
 
   queue:
-    environment:
-      PHP_FPM_POOL_NAME: "laravel_queue"
     entrypoint: ''
     command: ["php", "/var/www/html/artisan", "queue:work", "--tries=3"]
