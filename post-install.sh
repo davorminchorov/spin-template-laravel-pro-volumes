@@ -257,7 +257,7 @@ setup_mariadb() {
 
     merge_blocks "$service_name"
 
-    echo "Updating the Laravel .env and .env.example files for $service_name..."
+    echo "$service_name: Updating the Laravel .env and .env.example files..."
     ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
     ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=mariadb"
     ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=3306"
@@ -271,7 +271,7 @@ setup_mysql() {
 
     merge_blocks "$service_name"
 
-    echo "Updating the Laravel .env and .env.example files for $service_name..."
+    echo "$service_name: Updating the Laravel .env and .env.example files..."
     ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
     ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=mysql"
     ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=3306"
@@ -285,7 +285,7 @@ setup_postgresql() {
 
     merge_blocks "$service_name"
 
-    echo "Updating the Laravel .env and .env.example files for $service_name..."
+    echo "$service_name: Updating the Laravel .env and .env.example files..."
     ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=pgsql"
     ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=postgres"
     ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=5432"
@@ -303,7 +303,7 @@ setup_redis() {
 
     merge_blocks "$service_name"
 
-    echo "Updating the Laravel .env and .env.example files for $service_name..."
+    echo "$service_name: Updating the Laravel .env and .env.example files..."
     ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "REDIS_HOST" "REDIS_HOST=redis"
     ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "REDIS_PASSWORD" "REDIS_PASSWORD=redispassword"
 }
@@ -348,7 +348,7 @@ setup_sqlite() {
         # Create the SQLite database folder
         mkdir -p "$project_dir/.infrastructure/volume_data/sqlite"
 
-        echo "Updating the Laravel .env and .env.example files for $service_name..."
+        echo "$service_name: Updating the Laravel .env and .env.example files..."
         ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=sqlite"
         ensure_line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" --after "DB_CONNECTION" "DB_DATABASE=/var/www/html/.infrastructure/volume_data/sqlite/database.sqlite"
 
