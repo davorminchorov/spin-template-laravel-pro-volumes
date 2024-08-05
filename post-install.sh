@@ -28,6 +28,7 @@ user_id=${SPIN_USER_ID:-$(id -u)}
 ###############################################
 
 configure_vite() {
+    set -x
     local file="${project_dir}/vite.config.js"
 
     echo "Vite: Configuring Vite..."
@@ -361,7 +362,6 @@ clear
 
 process_selections
 
-set -x
 line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "APP_URL" "APP_URL=https://laravel.dev.test"
 
 prompt_and_update_file \
