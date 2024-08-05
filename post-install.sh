@@ -48,7 +48,7 @@ display_feature_menu() {
     echo -e "${horizon:+$BOLD$BLUE}1) Horizon${RESET}"
     echo -e "${queues:+$BOLD$BLUE}2) Queues (without Redis)${RESET}"
     echo -e "${reverb:+$BOLD$BLUE}3) Reverb${RESET}"
-    echo -e "${schedule:+$BOLD$BLUE}4) Task Schedule${RESET}"
+    echo -e "${schedule:+$BOLD$BLUE}4) Task Scheduling${RESET}"
     echo "Press a number to select/deselect."
     echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue or skip."
 }
@@ -164,6 +164,7 @@ set_colors() {
 }
 
 setup_horizon() {
+    
     merge_blocks "horizon"
 }
 
