@@ -131,7 +131,7 @@ merge_blocks() {
 }
 
 process_selections() {
-    echo "Processing your selections..."
+    echo "Preparing your project..."
     
     for selection in sqlite mysql mariadb postgresql redis horizon queues reverb schedule; do
         case "$selection" in
