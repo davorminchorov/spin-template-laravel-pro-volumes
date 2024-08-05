@@ -28,7 +28,6 @@ user_id=${SPIN_USER_ID:-$(id -u)}
 ###############################################
 
 configure_vite() {
-    set -x
     local file="${project_dir}/vite.config.js"
 
     echo "Vite: Configuring Vite..."
