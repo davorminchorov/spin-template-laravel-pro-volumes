@@ -27,6 +27,39 @@ user_id=${SPIN_USER_ID:-$(id -u)}
 # Functions
 ###############################################
 
+configure_vite() {
+    local file="${project_dir}/vite.config.js"
+
+    echo "Vite: Configuring Vite..."
+
+    # Check if the file exists
+    if [ ! -f "$file" ]; then
+        echo "${RED}Error: $file does not exist.${RESET}"
+        return 1
+    fi
+
+    # Add import statement if not present
+    sed_inplace '/^import laravel/a\
+const host = '\''vite.dev.test'\'';
+' "$file"
+
+    # Update or add server configuration
+    awk '
+    BEGIN { found=0; content="    server: {\n      host,\n      hmr: { \n          host,\n          clientPort: 443\n      },\n    },"; }
+    /export default defineConfig\({/,/^\});/ {
+        if ($0 ~ /server:/) {
+            found=1
+            print content
+            next
+        }
+    }
+    /^\});/ && !found {
+        print content
+    }
+    { print }
+    ' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+}
+
 display_database_menu() {
     clear
     echo "${BOLD}${YELLOW}What database engine(s) would you like to use?${RESET}"
@@ -56,9 +89,6 @@ display_feature_menu() {
 merge_blocks() {
     local service_name=$1
     local blocks_dir="$template_src_dir/blocks/$service_name"
-
-    # Clean up the container when the script exits
-    trap "docker rm -f $yq_container_name > /dev/null 2>&1" EXIT
 
     if [[ ! -d $blocks_dir ]]; then
         echo "${BOLD}${RED}The blocks directory for \"$service_name\" does not exist. Exiting...${RESET}"
@@ -330,6 +360,8 @@ done
 clear
 
 process_selections
+
+line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "APP_URL" "APP_URL=https://laravel.dev.test"
 
 prompt_and_update_file \
     --title "Configure Let's Encrypt" \
