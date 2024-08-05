@@ -360,7 +360,7 @@ done
 clear
 
 process_selections
-configure_vite
+# configure_vite
 line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "APP_URL" "APP_URL=https://laravel.dev.test"
 prompt_and_update_file \
     --title "Configure Let's Encrypt" \
