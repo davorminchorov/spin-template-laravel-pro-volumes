@@ -411,6 +411,7 @@ prompt_and_update_file \
 
 # Install npm dependencies
 echo "Installing node dependencies with yarn..."
+cd "$project_dir" || exit
 $COMPOSE_CMD run --rm node yarn install
 
 if [[ "$docker_compose_database_migration" == "true" ]]; then
