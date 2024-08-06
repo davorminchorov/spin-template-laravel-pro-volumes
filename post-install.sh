@@ -112,15 +112,19 @@ display_feature_menu() {
 initialize_database_service() {
     echo "Initializing the database service..."
     cd "$project_dir" || exit
-    echo "Starting docker containers and running migrations..."
-    $COMPOSE_CMD up -d --build \
-        -e "AUTORUN_ENABLED=true" \
-        -e "AUTORUN_LARAVEL_CONFIG_CACHE=false" \
-        -e "AUTORUN_LARAVEL_EVENT_CACHE=false" \
-        -e "AUTORUN_LARAVEL_ROUTE_CACHE=false" \
-        -e "AUTORUN_LARAVEL_VIEW_CACHE=false" 
+    echo "Starting docker containers..."
+    $COMPOSE_CMD up -d --build
 
-    trap "echo 'Stopping and removing containers...'; $COMPOSE_CMD down --volumes --remove-orphans" EXIT
+    trap 'echo "Stopping and removing containers..."; docker-compose down --volumes --remove-orphans' EXIT
+    echo "Running migrations..."
+    $COMPOSE_CMD run --rm \
+    --entrypoint "/etc/entrypoint.d/50-laravel-automations.sh" \
+    -e "AUTORUN_ENABLED=true" \
+    -e "AUTORUN_LARAVEL_CONFIG_CACHE=false" \
+    -e "AUTORUN_LARAVEL_EVENT_CACHE=false" \
+    -e "AUTORUN_LARAVEL_ROUTE_CACHE=false" \
+    -e "AUTORUN_LARAVEL_VIEW_CACHE=false" 
+    php
 }
 
 install_node_dependencies() {
