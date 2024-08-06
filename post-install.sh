@@ -133,7 +133,7 @@ initialize_database_service() {
     echo "${BOLD}${YELLOW}🔄 Starting docker containers...${RESET}"
     $COMPOSE_CMD up -d --build
 
-    trap 'echo "Stopping and removing containers..."; $COMPOSE_CMD down --volumes --remove-orphans > /dev/null 2>&1' EXIT
+    trap '$COMPOSE_CMD down --volumes --remove-orphans > /dev/null 2>&1' EXIT
     echo "${BOLD}${YELLOW}🔄 Running migrations...${RESET}"
     $COMPOSE_CMD run --rm --no-deps \
     -e "AUTORUN_ENABLED=true" \
