@@ -111,6 +111,7 @@ display_feature_menu() {
 
 initialize_database_service() {
     echo "Initializing the database service..."
+    cd "$project_dir" || exit
     echo "Starting docker containers..."
     $COMPOSE_CMD up -d --build
 
