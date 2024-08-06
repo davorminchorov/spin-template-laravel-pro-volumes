@@ -123,7 +123,7 @@ initialize_database_service() {
     -e "AUTORUN_LARAVEL_CONFIG_CACHE=false" \
     -e "AUTORUN_LARAVEL_EVENT_CACHE=false" \
     -e "AUTORUN_LARAVEL_ROUTE_CACHE=false" \
-    -e "AUTORUN_LARAVEL_VIEW_CACHE=false" 
+    -e "AUTORUN_LARAVEL_VIEW_CACHE=false" \
     php
 }
 
