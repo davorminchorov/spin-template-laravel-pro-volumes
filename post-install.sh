@@ -118,7 +118,7 @@ initialize_database_service() {
         echo "${BOLD}${YELLOW}The following containers are currently running:${RESET}"
         docker ps --format "table {{.Names}}\t{{.Ports}}"
         
-        read -p "Do you want to stop all running containers, including those for this project? (y/n): " answer
+        read -p "Do you want to stop all running containers? (y/n): " answer
         if [[ $answer =~ ^[Yy]$ ]]; then
             echo "Stopping all running containers..."
             docker stop $(docker ps -q)
@@ -143,7 +143,7 @@ initialize_database_service() {
     -e "AUTORUN_LARAVEL_ROUTE_CACHE=false" \
     -e "AUTORUN_LARAVEL_VIEW_CACHE=false" \
     -e "SHOW_WELCOME_MESSAGE=false" \
-    php
+    php exit
 }
 
 install_node_dependencies() {
