@@ -118,7 +118,7 @@ initialize_database_service() {
         echo "${BOLD}${YELLOW}The following containers are currently running:${RESET}"
         docker ps --format "table {{.Names}}\t{{.Ports}}"
         
-        read -p "Do you want to stop all running containers? (y/n): " answer
+        read -p "${BOLD}${YELLOW}Do you want to stop all running containers? (y/n): ${RESET}" answer
         if [[ $answer =~ ^[Yy]$ ]]; then
             echo "Stopping all running containers..."
             docker stop $(docker ps -q)
@@ -128,10 +128,9 @@ initialize_database_service() {
         fi
     fi
 
-    echo "Initializing the database service..."
+    echo "${BOLD}${BLUE}Initializing the database service...${RESET}"
     cd "$project_dir" || exit
-    echo "Starting docker containers..."
-    set -x
+    echo "${BOLD}${BLUE}Starting docker containers...${RESET}"
     $COMPOSE_CMD up -d --build
 
     trap 'echo "Stopping and removing containers..."; $COMPOSE_CMD down --volumes --remove-orphans' EXIT
