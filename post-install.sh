@@ -37,7 +37,7 @@ configure_vite() {
     if [ ! -f "$file" ]; then
         echo "${RED}Error: $file does not exist.${RESET}"
         return 1
-    }
+    fi
 
     # Add import statement if not present
     if ! grep -q "import fs from 'fs';" "$file"; then
@@ -45,37 +45,38 @@ configure_vite() {
     fi
 
     # Update or add server configuration
-    sed_inplace '
+    sed_inplace "$(cat <<'EOF'
     /^export default defineConfig\({/,/^\});/ {
         /server:/{
             :a
             N
             /\n    }/!ba
             c\    server: {\
-        host: '\''0.0.0.0'\'',\
+        host: '0.0.0.0',\
         hmr: {\
-            host: '\''vite.dev.test'\'',\
+            host: 'vite.dev.test',\
             clientPort: 443,\
         },\
         https: {\
-            key: fs.readFileSync('\''/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'\''),\
-            cert: fs.readFileSync('\''/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'\''),\
+            key: fs.readFileSync('/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'),\
+            cert: fs.readFileSync('/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'),\
         },\
     },
         }
         /^\});/i\    server: {\
-        host: '\''0.0.0.0'\'',\
+        host: '0.0.0.0',\
         hmr: {\
-            host: '\''vite.dev.test'\'',\
+            host: 'vite.dev.test',\
             clientPort: 443,\
         },\
         https: {\
-            key: fs.readFileSync('\''/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'\''),\
-            cert: fs.readFileSync('\''/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'\''),\
+            key: fs.readFileSync('/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'),\
+            cert: fs.readFileSync('/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'),\
         },\
     },
     }
-    ' "$file"
+EOF
+)" "$file"
 
     echo "Vite configuration updated successfully."
 }
