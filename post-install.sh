@@ -136,14 +136,15 @@ initialize_database_service() {
 
     trap 'echo "Stopping and removing containers..."; $COMPOSE_CMD down --volumes --remove-orphans' EXIT
     echo "Running migrations..."
-    $COMPOSE_CMD run --rm \
+    $COMPOSE_CMD run --rm --no-deps \
+    --entrypoint "docker-php-serversideup-entrypoint" \
     -e "AUTORUN_ENABLED=true" \
     -e "AUTORUN_LARAVEL_CONFIG_CACHE=false" \
     -e "AUTORUN_LARAVEL_EVENT_CACHE=false" \
     -e "AUTORUN_LARAVEL_ROUTE_CACHE=false" \
     -e "AUTORUN_LARAVEL_VIEW_CACHE=false" \
     -e "SHOW_WELCOME_MESSAGE=false" \
-    php exit
+    php
 }
 
 install_node_dependencies() {
