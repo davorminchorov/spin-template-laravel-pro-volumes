@@ -113,11 +113,11 @@ initialize_database_service() {
     echo "Initializing the database service..."
     cd "$project_dir" || exit
     echo "Starting docker containers..."
+    set -x
     $COMPOSE_CMD up -d --build
 
     trap 'echo "Stopping and removing containers..."; docker-compose down --volumes --remove-orphans' EXIT
     echo "Running migrations..."
-    set -x
     $COMPOSE_CMD run --rm \
     -e "AUTORUN_ENABLED=true" \
     -e "AUTORUN_LARAVEL_CONFIG_CACHE=false" \
