@@ -44,37 +44,40 @@ configure_vite() {
         sed_inplace "1s/^/import fs from 'fs';\n/" "$file"
     fi
 
-    # Update or add server configuration
-    sed_inplace '
-    /^export default defineConfig({/,/^});/ {
-        /server:/ {
-            :a
-            N
-            /\n    }/!ba
-            c\    server: {\
-        host: '"'"'0.0.0.0'"'"',\
-        hmr: {\
-            host: '"'"'vite.dev.test'"'"',\
-            clientPort: 443,\
-        },\
-        https: {\
-            key: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'"'"'),\
-            cert: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'"'"'),\
-        },\
-    },
-        }
-        /^});/i\    server: {\
-        host: '"'"'0.0.0.0'"'"',\
-        hmr: {\
-            host: '"'"'vite.dev.test'"'"',\
-            clientPort: 443,\
-        },\
-        https: {\
-            key: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'"'"'),\
-            cert: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'"'"'),\
-        },\
-    },
+    # Update or add server configuration using awk in-place
+    awk -i inplace '
+    BEGIN { server_added = 0 }
+    /^import .* from/ { print; next }
+    /^export default defineConfig\({/ {
+        print
+        print "    server: {"
+        print "        host: '"'"'0.0.0.0'"'"',"
+        print "        hmr: {"
+        print "            host: '"'"'vite.dev.test'"'"',"
+        print "            clientPort: 443,"
+        print "        },"
+        print "        https: {"
+        print "            key: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'"'"'),"
+        print "            cert: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'"'"'),"
+        print "        },"
+        print "    },"
+        server_added = 1
+        next
     }
+    /^});/ && !server_added {
+        print "    server: {"
+        print "        host: '"'"'0.0.0.0'"'"',"
+        print "        hmr: {"
+        print "            host: '"'"'vite.dev.test'"'"',"
+        print "            clientPort: 443,"
+        print "        },"
+        print "        https: {"
+        print "            key: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'"'"'),"
+        print "            cert: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'"'"'),"
+        print "        },"
+        print "    },"
+    }
+    { print }
     ' "$file"
 
     echo "Vite configuration updated successfully."
