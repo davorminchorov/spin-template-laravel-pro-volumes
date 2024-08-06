@@ -22,6 +22,7 @@ redis=""
 project_dir=${SPIN_PROJECT_DIRECTORY:-"$(pwd)/template"}
 template_src_dir=${SPIN_TEMPLATE_TEMPORARY_SRC_DIR:-"$(pwd)"}
 user_id=${SPIN_USER_ID:-$(id -u)}
+docker_compose_database_migration="false"
 
 ###############################################
 # Functions
@@ -103,6 +104,18 @@ display_feature_menu() {
     echo -e "${schedule:+$BOLD$BLUE}4) Task Scheduling${RESET}"
     echo "Press a number to select/deselect."
     echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue or skip."
+}
+
+initialize_database_service() {
+    echo "Initializing the database service..."
+    echo "Starting docker containers..."
+    $COMPOSE_CMD up -d --build
+
+    trap 'echo "Stopping and removing containers..."; docker-compose down --volumes --remove-orphans' EXIT
+
+    echo "Running database migrations..."
+    $COMPOSE_CMD run --rm php php artisan migrate --force
+
 }
 
 merge_blocks() {
@@ -218,6 +231,7 @@ setup_horizon() {
 }
 
 setup_mariadb() {
+    docker_compose_database_migration="true"
     local service_name="mariadb"
 
     merge_blocks "$service_name"
@@ -232,6 +246,7 @@ setup_mariadb() {
 }
 
 setup_mysql() {
+    docker_compose_database_migration="true"
     local service_name="mysql"
 
     merge_blocks "$service_name"
@@ -246,6 +261,7 @@ setup_mysql() {
 }
 
 setup_postgresql() {
+    docker_compose_database_migration="true"
     local service_name="postgres"
 
     merge_blocks "$service_name"
@@ -388,3 +404,11 @@ prompt_and_update_file \
     --file "$project_dir/.infrastructure/conf/traefik/prod/traefik.yml" \
     --search-default "changeme@example.com" \
     --success-msg "Updated \".infrastructure/conf/traefik/prod/traefik.yml\" with your email."
+
+# Install npm dependencies
+echo "Installing node dependencies with yarn..."
+$COMPOSE_CMD run --rm node yarn install
+
+if [[ "$docker_compose_database_migration" == "true" ]]; then
+    initialize_database_service
+fi
