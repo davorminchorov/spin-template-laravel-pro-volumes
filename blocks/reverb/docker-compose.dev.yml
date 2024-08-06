@@ -1,5 +1,4 @@
 services:
-
   reverb:
     build:
       target: development
@@ -13,7 +12,7 @@ services:
       - development
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.laravel-reverb.rule=Host(`laravel.dev.test`) && (PathPrefix(`/app`) || PathPrefix(`/apps`))"
+      - "traefik.http.routers.laravel-reverb.rule=Host(`reverb.dev.test`)"
       - "traefik.http.routers.laravel-reverb.entrypoints=websecure"
       - "traefik.http.routers.laravel-reverb.tls=true"
       - "traefik.http.services.laravel-reverb.loadbalancer.server.port=8080"
