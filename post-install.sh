@@ -118,7 +118,7 @@ initialize_database_service() {
         echo "${BOLD}${YELLOW}The following containers are currently running:${RESET}"
         docker ps --format "table {{.Names}}\t{{.Ports}}"
         
-        read -p "${BOLD}${YELLOW}Do you want to stop all running containers? (y/n): ${RESET}" answer
+        read -r -p "${BOLD}${YELLOW}Do you want to stop all running containers? (y/n): ${RESET}" answer
         if [[ $answer =~ ^[Yy]$ ]]; then
             echo "Stopping all running containers..."
             docker stop $(docker ps -q)
