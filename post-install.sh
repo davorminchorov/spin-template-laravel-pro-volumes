@@ -117,6 +117,7 @@ initialize_database_service() {
 
     trap 'echo "Stopping and removing containers..."; docker-compose down --volumes --remove-orphans' EXIT
     echo "Running migrations..."
+    set -x
     $COMPOSE_CMD run --rm \
     --entrypoint "/etc/entrypoint.d/50-laravel-automations.sh" \
     -e "AUTORUN_ENABLED=true" \
