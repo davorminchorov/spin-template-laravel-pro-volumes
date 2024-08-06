@@ -130,7 +130,6 @@ initialize_database_service() {
 
     echo "${BOLD}${YELLOW}🔄 Initializing the database service...${RESET}"
     cd "$project_dir" || exit
-    echo "${BOLD}${YELLOW}🔄 Starting docker containers...${RESET}"
     $COMPOSE_CMD up -d --build
 
     trap '$COMPOSE_CMD down --volumes --remove-orphans > /dev/null 2>&1' EXIT
@@ -144,7 +143,9 @@ initialize_database_service() {
     -e "SHOW_WELCOME_MESSAGE=false" \
     -e "S6_VERBOSITY=0" \
     php \
-    true 
+    true
+
+    echo "✅ Migrations completed successfully!${RESET}"
 }
 
 install_node_dependencies() {
@@ -184,7 +185,7 @@ install_node_dependencies() {
         return 1
     fi
 
-    echo "Installing Node dependencies with yarn..."
+    echo "${BOLD}${YELLOW}🔄 Installing Node dependencies with yarn...${RESET}"
     if ! $COMPOSE_CMD run --no-deps --rm node yarn install; then
         echo "${BOLD}${RED}Error: Failed to install node dependencies.${RESET}" >&2
         return 1
