@@ -375,7 +375,58 @@ setup_redis() {
 }
 
 setup_reverb() {
-    merge_blocks "reverb"
+    local service_name="reverb"
+    local current_dir=$(pwd)
+    local appId=$(( (RANDOM % 900000) + 100000 ))
+    local appKey=$(LC_ALL=C tr -dc 'a-z' < /dev/urandom | head -c 20)
+    local appSecret=$(LC_ALL=C tr -dc 'a-z' < /dev/urandom | head -c 20)
+
+    cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
+
+    echo "$service_name: Installing Reverb dependencies..."
+    $COMPOSE_CMD run --rm -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php composer --verbose --working-dir=/var/www/html/ require laravel/reverb
+
+    cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
+
+    # Add Reverb environment variables
+    line_in_file --file .env \
+        "REVERB_APP_ID=$appId" \
+        "REVERB_APP_KEY=$appKey" \
+        "REVERB_APP_SECRET=$appSecret" \
+        "REVERB_HOST=reverb.dev.test" \
+        "REVERB_PORT=443" \
+        "REVERB_SCHEME=https" \
+        "VITE_REVERB_APP_KEY=\${REVERB_APP_KEY}" \
+        "VITE_REVERB_HOST=\${REVERB_HOST}" \
+        "VITE_REVERB_PORT=\${REVERB_PORT}" \
+        "VITE_REVERB_SCHEME=\${REVERB_SCHEME}"
+
+    # Update broadcasting configuration
+    local reverb_config="    'reverb' => [
+        'driver' => 'reverb',
+        'key' => env('REVERB_APP_KEY'),
+        'secret' => env('REVERB_APP_SECRET'),
+        'app_id' => env('REVERB_APP_ID'),
+        'options' => [
+            'host' => env('REVERB_HOST'),
+            'port' => env('REVERB_PORT', 443),
+            'scheme' => env('REVERB_SCHEME', 'https'),
+            'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
+        ],
+        'client_options' => [],
+    ],"
+
+    line_in_file --file config/broadcasting.php --after "'connections' => [" "$reverb_config"
+
+    # Enable BroadcastServiceProvider
+    line_in_file --file config/app.php --replace \
+        "// App\Providers\BroadcastServiceProvider::class" \
+        "App\Providers\BroadcastServiceProvider::class"
+
+    # Update broadcasting driver
+    line_in_file --file .env --replace "BROADCAST_DRIVER=log" "BROADCAST_DRIVER=reverb"
+
+    merge_blocks "$service_name"
 }
 
 setup_schedule() {
