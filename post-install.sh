@@ -36,28 +36,47 @@ configure_vite() {
     if [ ! -f "$file" ]; then
         echo "${RED}Error: $file does not exist.${RESET}"
         return 1
-    fi
+    }
 
     # Add import statement if not present
-    sed_inplace '/^import laravel/a\
-const host = '\''vite.dev.test'\'';
-' "$file"
+    if ! grep -q "import fs from 'fs';" "$file"; then
+        sed_inplace "1s/^/import fs from 'fs';\n/" "$file"
+    fi
 
     # Update or add server configuration
-    awk '
-    BEGIN { found=0; content="    server: {\n      host,\n      hmr: { \n          host,\n          clientPort: 443\n      },\n    },"; }
-    /export default defineConfig\({/,/^\});/ {
-        if ($0 ~ /server:/) {
-            found=1
-            print content
-            next
+    sed_inplace '
+    /^export default defineConfig\({/,/^\});/ {
+        /server:/{
+            :a
+            N
+            /\n    }/!ba
+            c\    server: {\
+        host: '\''0.0.0.0'\'',\
+        hmr: {\
+            host: '\''vite.dev.test'\'',\
+            clientPort: 443,\
+        },\
+        https: {\
+            key: fs.readFileSync('\''/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'\''),\
+            cert: fs.readFileSync('\''/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'\''),\
+        },\
+    },
         }
+        /^\});/i\    server: {\
+        host: '\''0.0.0.0'\'',\
+        hmr: {\
+            host: '\''vite.dev.test'\'',\
+            clientPort: 443,\
+        },\
+        https: {\
+            key: fs.readFileSync('\''/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'\''),\
+            cert: fs.readFileSync('\''/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'\''),\
+        },\
+    },
     }
-    /^\});/ && !found {
-        print content
-    }
-    { print }
-    ' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+    ' "$file"
+
+    echo "Vite configuration updated successfully."
 }
 
 display_database_menu() {

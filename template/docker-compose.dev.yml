@@ -56,7 +56,7 @@ services:
       - "traefik.http.routers.vite.entrypoints=websecure"
       - "traefik.http.routers.vite.tls=true"
       - "traefik.http.services.vite.loadbalancer.server.port=5173"
-      - "traefik.http.services.vite.loadbalancer.server.scheme=http"
+      - "traefik.http.services.vite.loadbalancer.server.scheme=https"
 
   mailpit:
       image: axllent/mailpit
