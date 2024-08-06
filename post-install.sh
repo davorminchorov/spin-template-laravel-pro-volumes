@@ -302,8 +302,11 @@ set_colors() {
 }
 
 setup_horizon() {
-    
-    merge_blocks "horizon"
+    local service_name="horizon"
+
+    echo "$service_name: Installing Horizon dependencies..."
+    $COMPOSE_CMD run --rm -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" "$SPIN_PHP_DOCKER_IMAGE" composer --verbose --working-dir=/var/www/html/ require laravel/horizon
+    merge_blocks "$service_name"
 }
 
 setup_mariadb() {
