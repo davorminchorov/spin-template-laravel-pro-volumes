@@ -112,14 +112,15 @@ display_feature_menu() {
 initialize_database_service() {
     echo "Initializing the database service..."
     cd "$project_dir" || exit
-    echo "Starting docker containers..."
-    $COMPOSE_CMD up -d --build
+    echo "Starting docker containers and running migrations..."
+    $COMPOSE_CMD up -d --build \
+        -e "AUTORUN_ENABLED=true" \
+        -e "AUTORUN_LARAVEL_CONFIG_CACHE=false" \
+        -e "AUTORUN_LARAVEL_EVENT_CACHE=false" \
+        -e "AUTORUN_LARAVEL_ROUTE_CACHE=false" \
+        -e "AUTORUN_LARAVEL_VIEW_CACHE=false" 
 
-    trap 'echo "Stopping and removing containers..."; docker-compose down --volumes --remove-orphans' EXIT
-
-    echo "Running database migrations..."
-    $COMPOSE_CMD run --rm php php artisan migrate --force
-
+    trap "echo 'Stopping and removing containers...'; $COMPOSE_CMD down --volumes --remove-orphans" EXIT
 }
 
 install_node_dependencies() {
