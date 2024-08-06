@@ -303,9 +303,15 @@ set_colors() {
 
 setup_horizon() {
     local service_name="horizon"
+    local current_dir=$(pwd)
+
+    cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
 
     echo "$service_name: Installing Horizon dependencies..."
     $COMPOSE_CMD run --rm -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" "$SPIN_PHP_DOCKER_IMAGE" composer --verbose --working-dir=/var/www/html/ require laravel/horizon
+
+    cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
+
     merge_blocks "$service_name"
 }
 
