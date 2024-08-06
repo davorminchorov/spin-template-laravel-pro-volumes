@@ -185,7 +185,7 @@ install_node_dependencies() {
     fi
 
     echo "Installing Node dependencies with yarn..."
-    if ! $COMPOSE_CMD run --rm node yarn install; then
+    if ! $COMPOSE_CMD run --no-deps --rm node yarn install; then
         echo "${BOLD}${RED}Error: Failed to install node dependencies.${RESET}" >&2
         return 1
     fi
