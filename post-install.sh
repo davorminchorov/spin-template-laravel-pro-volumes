@@ -110,13 +110,31 @@ display_feature_menu() {
 }
 
 initialize_database_service() {
+    echo "Checking for running containers..."
+    
+    # Check for any running containers
+    if [ "$(docker ps -q)" ]; then
+        clear
+        echo "${BOLD}${YELLOW}The following containers are currently running:${RESET}"
+        docker ps --format "table {{.Names}}\t{{.Ports}}"
+        
+        read -p "Do you want to stop all running containers, including those for this project? (y/n): " answer
+        if [[ $answer =~ ^[Yy]$ ]]; then
+            echo "Stopping all running containers..."
+            docker stop $(docker ps -q)
+        else
+            echo "Exiting. Please stop the containers manually before proceeding."
+            exit 1
+        fi
+    fi
+
     echo "Initializing the database service..."
     cd "$project_dir" || exit
     echo "Starting docker containers..."
     set -x
     $COMPOSE_CMD up -d --build
 
-    trap 'echo "Stopping and removing containers..."; docker-compose down --volumes --remove-orphans' EXIT
+    trap 'echo "Stopping and removing containers..."; $COMPOSE_CMD down --volumes --remove-orphans' EXIT
     echo "Running migrations..."
     $COMPOSE_CMD run --rm \
     -e "AUTORUN_ENABLED=true" \
