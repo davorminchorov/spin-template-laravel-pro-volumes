@@ -122,6 +122,52 @@ initialize_database_service() {
 
 }
 
+install_node_dependencies() {
+    local reinstall
+
+    if [[ ! -d "$project_dir" ]]; then
+        echo "Error: Project directory '$project_dir' does not exist." >&2
+        return 1
+    fi
+
+    if [[ -d "$project_dir/node_modules" ]]; then
+        echo "Existing node_modules directory found."
+        while true; do
+            read -rp "Would you like to reinstall node dependencies with yarn? (y/n) " reinstall
+            case $reinstall in
+                [Yy]) 
+                    echo "Reinstalling node dependencies with yarn..."
+                    if ! rm -rf "$project_dir/node_modules"; then
+                        echo "Error: Failed to remove existing node_modules directory." >&2
+                        return 1
+                    fi
+                    break
+                    ;;
+                [Nn]) 
+                    echo "Skipping reinstallation."
+                    return 0
+                    ;;
+                *) 
+                    echo "Please answer y or n."
+                    ;;
+            esac
+        done
+    fi
+
+    if ! cd "$project_dir"; then
+        echo "Error: Failed to change to project directory '$project_dir'." >&2
+        return 1
+    fi
+
+    echo "Installing Node dependencies with yarn..."
+    if ! $COMPOSE_CMD run --rm node yarn install; then
+        echo "${BOLD}${RED}Error: Failed to install node dependencies.${RESET}" >&2
+        return 1
+    fi
+
+    echo "Node dependencies installed successfully."
+}
+
 merge_blocks() {
     local service_name=$1
     local blocks_dir="$template_src_dir/blocks/$service_name"
@@ -410,9 +456,7 @@ prompt_and_update_file \
     --success-msg "Updated \".infrastructure/conf/traefik/prod/traefik.yml\" with your email."
 
 # Install npm dependencies
-echo "Installing node dependencies with yarn..."
-cd "$project_dir" || exit
-$COMPOSE_CMD run --rm node yarn install
+install_node_dependencies
 
 if [[ "$docker_compose_database_migration" == "true" ]]; then
     initialize_database_service
