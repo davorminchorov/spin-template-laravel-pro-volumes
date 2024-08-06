@@ -44,8 +44,8 @@ configure_vite() {
         sed_inplace "1s/^/import fs from 'fs';\n/" "$file"
     fi
 
-    # Update or add server configuration using awk in-place
-    awk -i inplace '
+    # Update or add server configuration using awk
+    awk '
     BEGIN { server_added = 0 }
     /^import .* from/ { print; next }
     /^export default defineConfig\({/ {
@@ -78,7 +78,7 @@ configure_vite() {
         print "    },"
     }
     { print }
-    ' "$file"
+    ' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
 
     echo "Vite configuration updated successfully."
 }
