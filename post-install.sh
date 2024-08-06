@@ -128,13 +128,13 @@ initialize_database_service() {
         fi
     fi
 
-    echo "${BOLD}${BLUE}Initializing the database service...${RESET}"
+    echo "${BOLD}${YELLOW}🔄 Initializing the database service...${RESET}"
     cd "$project_dir" || exit
-    echo "${BOLD}${BLUE}Starting docker containers...${RESET}"
+    echo "${BOLD}${YELLOW}🔄 Starting docker containers...${RESET}"
     $COMPOSE_CMD up -d --build
 
-    trap 'echo "Stopping and removing containers..."; $COMPOSE_CMD down --volumes --remove-orphans' EXIT
-    echo "Running migrations..."
+    trap 'echo "Stopping and removing containers..."; $COMPOSE_CMD down --volumes --remove-orphans > /dev/null 2>&1' EXIT
+    echo "${BOLD}${YELLOW}🔄 Running migrations...${RESET}"
     $COMPOSE_CMD run --rm --no-deps \
     -e "AUTORUN_ENABLED=true" \
     -e "AUTORUN_LARAVEL_CONFIG_CACHE=false" \
