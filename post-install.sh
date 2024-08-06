@@ -144,7 +144,9 @@ initialize_database_service() {
     -e "AUTORUN_LARAVEL_ROUTE_CACHE=false" \
     -e "AUTORUN_LARAVEL_VIEW_CACHE=false" \
     -e "SHOW_WELCOME_MESSAGE=false" \
-    php
+    -e "S6_VERBOSITY=0" \
+    php \
+    true 
 }
 
 install_node_dependencies() {
