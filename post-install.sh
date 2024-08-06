@@ -130,11 +130,11 @@ initialize_database_service() {
 
     echo "${BOLD}${YELLOW}🔄 Initializing the database service...${RESET}"
     cd "$project_dir" || exit
-    $COMPOSE_CMD up -d --build
+    $COMPOSE_CMD up -d --remove-orphans --build
 
     trap '$COMPOSE_CMD down --volumes --remove-orphans > /dev/null 2>&1' EXIT
     echo "${BOLD}${YELLOW}🔄 Running migrations...${RESET}"
-    $COMPOSE_CMD run --rm --no-deps \
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps \
     -e "AUTORUN_ENABLED=true" \
     -e "AUTORUN_LARAVEL_CONFIG_CACHE=false" \
     -e "AUTORUN_LARAVEL_EVENT_CACHE=false" \
@@ -186,7 +186,7 @@ install_node_dependencies() {
     fi
 
     echo "${BOLD}${YELLOW}🔄 Installing Node dependencies with yarn...${RESET}"
-    if ! $COMPOSE_CMD run --no-deps --rm node yarn install; then
+    if ! $COMPOSE_CMD run --no-deps --rm --remove-orphans node yarn install; then
         echo "${BOLD}${RED}Error: Failed to install node dependencies.${RESET}" >&2
         return 1
     fi
@@ -308,7 +308,7 @@ setup_horizon() {
     cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
 
     echo "$service_name: Installing Horizon dependencies..."
-    $COMPOSE_CMD run --rm -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php composer --verbose --working-dir=/var/www/html/ require laravel/horizon
+    $COMPOSE_CMD run --rm --remove-orphans -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php composer --verbose --working-dir=/var/www/html/ require laravel/horizon
 
     cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
 
@@ -384,7 +384,7 @@ setup_reverb() {
     cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
 
     echo "$service_name: Installing Reverb dependencies..."
-    $COMPOSE_CMD run --rm -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php composer --verbose --working-dir=/var/www/html/ require laravel/reverb
+    $COMPOSE_CMD run --rm --remove-orphans -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php composer --verbose --working-dir=/var/www/html/ require laravel/reverb
 
     cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
 
