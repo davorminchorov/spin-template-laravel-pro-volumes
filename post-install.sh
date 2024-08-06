@@ -45,38 +45,37 @@ configure_vite() {
     fi
 
     # Update or add server configuration
-    sed_inplace "$(cat <<'EOF'
-    /^export default defineConfig\({/,/^\});/ {
-        /server:/{
+    sed_inplace '
+    /^export default defineConfig({/,/^});/ {
+        /server:/ {
             :a
             N
             /\n    }/!ba
             c\    server: {\
-        host: '0.0.0.0',\
+        host: '"'"'0.0.0.0'"'"',\
         hmr: {\
-            host: 'vite.dev.test',\
+            host: '"'"'vite.dev.test'"'"',\
             clientPort: 443,\
         },\
         https: {\
-            key: fs.readFileSync('/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'),\
-            cert: fs.readFileSync('/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'),\
+            key: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'"'"'),\
+            cert: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'"'"'),\
         },\
     },
         }
-        /^\});/i\    server: {\
-        host: '0.0.0.0',\
+        /^});/i\    server: {\
+        host: '"'"'0.0.0.0'"'"',\
         hmr: {\
-            host: 'vite.dev.test',\
+            host: '"'"'vite.dev.test'"'"',\
             clientPort: 443,\
         },\
         https: {\
-            key: fs.readFileSync('/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'),\
-            cert: fs.readFileSync('/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'),\
+            key: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'"'"'),\
+            cert: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'"'"'),\
         },\
     },
     }
-EOF
-)" "$file"
+    ' "$file"
 
     echo "Vite configuration updated successfully."
 }
