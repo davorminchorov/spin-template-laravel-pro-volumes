@@ -32,7 +32,7 @@ add_user_todo_item() {
     if [ -z "$SPIN_USER_TODOS" ]; then
         SPIN_USER_TODOS="$1"
     else
-        SPIN_USER_TODOS="$SPIN_USER_TODOS $1"
+        SPIN_USER_TODOS="$SPIN_USER_TODOS"$'\n'"$1"
     fi
 }
 
