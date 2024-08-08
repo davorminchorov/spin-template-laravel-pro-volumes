@@ -118,23 +118,7 @@ display_feature_menu() {
 }
 
 initialize_database_service() {
-    echo "Checking for running containers..."
-    
-    # Check for any running containers
-    if [ "$(docker ps -q)" ]; then
-        clear
-        echo "${BOLD}${YELLOW}The following containers are currently running:${RESET}"
-        docker ps --format "table {{.Names}}\t{{.Ports}}"
-        
-        read -r -p "${BOLD}${YELLOW}Do you want to stop all running containers? (y/n): ${RESET}" answer
-        if [[ $answer =~ ^[Yy]$ ]]; then
-            echo "Stopping all running containers..."
-            docker stop $(docker ps -q)
-        else
-            echo "Exiting. Please stop the containers manually before proceeding."
-            exit 1
-        fi
-    fi
+    stop_running_containers
 
     echo "${BOLD}${YELLOW}🔄 Initializing the database service...${RESET}"
     cd "$project_dir" || exit
@@ -316,7 +300,7 @@ setup_horizon() {
     cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
 
     echo "$service_name: Installing Horizon dependencies..."
-    $COMPOSE_CMD run --rm --remove-orphans -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php composer --verbose --working-dir=/var/www/html/ require laravel/horizon
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php composer --verbose --working-dir=/var/www/html/ require laravel/horizon
 
     cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
 
@@ -331,12 +315,12 @@ setup_mariadb() {
     merge_blocks "$service_name"
 
     echo "$service_name: Updating the Laravel .env and .env.example files..."
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=mariadb"
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=3306"
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=root"
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=mariadb"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=3306"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=root"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
 }
 
 setup_mysql() {
@@ -346,12 +330,12 @@ setup_mysql() {
     merge_blocks "$service_name"
 
     echo "$service_name: Updating the Laravel .env and .env.example files..."
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=mysql"
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=3306"
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=root"
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=mysql"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=3306"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=root"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
 }
 
 setup_postgresql() {
@@ -361,12 +345,12 @@ setup_postgresql() {
     merge_blocks "$service_name"
 
     echo "$service_name: Updating the Laravel .env and .env.example files..."
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=pgsql"
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=postgres"
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=5432"
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=postgres"
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=postgrespassword"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=pgsql"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=postgres"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=5432"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=postgres"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=postgrespassword"
 }
 
 setup_queues() {
@@ -379,8 +363,8 @@ setup_redis() {
     merge_blocks "$service_name"
 
     echo "$service_name: Updating the Laravel .env and .env.example files..."
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "REDIS_HOST" "REDIS_HOST=redis"
-    line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "REDIS_PASSWORD" "REDIS_PASSWORD=redispassword"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "REDIS_HOST" "REDIS_HOST=redis"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "REDIS_PASSWORD" "REDIS_PASSWORD=redispassword"
 }
 
 setup_reverb() {
@@ -426,11 +410,40 @@ setup_sqlite() {
         mkdir -p "$project_dir/.infrastructure/volume_data/sqlite"
 
         echo "$service_name: Updating the Laravel .env and .env.example files..."
-        line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=sqlite"
-        line_in_file --after --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_DATABASE=/var/www/html/.infrastructure/volume_data/sqlite/database.sqlite"
+        line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=sqlite"
+        line_in_file --action after --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_DATABASE=/var/www/html/.infrastructure/volume_data/sqlite/database.sqlite"
 
         # Run the migrations to create the SQLite database
         docker run --rm -v "$project_dir:/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" "$SPIN_PHP_DOCKER_IMAGE" php /var/www/html/artisan migrate --force
+    fi
+}
+
+stop_running_containers() {
+    local running_containers
+    running_containers=$(docker ps -q)
+
+    echo "Checking for running containers..."    
+    if [[ -n "$running_containers" ]]; then
+        clear
+        echo "${BOLD}${YELLOW}The following containers are currently running:${RESET}"
+        if ! docker ps --format "table {{.Names}}\t{{.Ports}}"; then
+            echo "Error: Failed to list running containers."
+            return 1
+        fi
+        
+        local answer
+        read -r -p $'\n'"${BOLD}${YELLOW}Do you want to stop all running containers? (y/n): ${RESET}" answer
+        
+        if [[ $answer =~ ^[Yy]$ ]]; then
+            echo "Stopping all running containers..."
+            if ! docker stop $running_containers; then
+                echo "Error: Failed to stop some or all containers."
+                return 1
+            fi
+        else
+            echo "Exiting. Please stop the containers manually before proceeding."
+            return 1
+        fi
     fi
 }
 
@@ -492,7 +505,7 @@ clear
 
 process_selections
 configure_vite
-line_in_file --replace --file "$project_dir/.env" --file "$project_dir/.env.example" "APP_URL" "APP_URL=https://laravel.dev.test"
+line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "APP_URL" "APP_URL=https://laravel.dev.test"
 prompt_and_update_file \
     --title "🔐 Configure Let's Encrypt" \
     --details "Let's Encrypt requires an email address to send notifications about SSL renewals." \
