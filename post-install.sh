@@ -121,8 +121,8 @@ display_feature_menu() {
 display_github_actions_menu() {
     clear
     echo "${BOLD}${YELLOW}Would you like to use GitHub Actions?${RESET}"
-    echo -e "${use_github_actions:+$BOLD$BLUE}1) Yes${RESET}"
-    echo -e "${!use_github_actions:+$BOLD$BLUE}2) No${RESET}"
+    echo -e "${use_github_actions:+${BOLD}${BLUE}}1) Yes${RESET}"
+    echo -e "${use_github_actions:+${RESET}}${use_github_actions:+${BOLD}${BLUE}}2) No${RESET}"
     echo "Press a number to select/deselect."
     echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue."
 }
