@@ -370,7 +370,7 @@ setup_redis() {
 setup_reverb() {
     local service_name="reverb"
     merge_blocks "$service_name"
-    add_user_todo_item "Complete Laravel Reverb installation (https://spin-template-laravel-pro.pages.dev/)"
+    add_user_todo_item "Complete Laravel Reverb installation (https://getspin.pro/docs/services/laravel-reverb)"
 }
 
 setup_schedule() {
