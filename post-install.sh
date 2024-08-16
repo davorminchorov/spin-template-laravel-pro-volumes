@@ -17,7 +17,7 @@ mysql=""
 mariadb=""
 postgresql=""
 redis=""
-use_github_actions=""
+use_github_actions=false
 
 # Set project variables
 project_dir=${SPIN_PROJECT_DIRECTORY:-"$(pwd)/template"}
@@ -528,8 +528,8 @@ while true; do
     display_github_actions_menu
     read -s -r -n 1 key
     case $key in
-        1) use_github_actions="1" ;;
-        2) use_github_actions="" ;;
+        1) use_github_actions=true ;;
+        2) use_github_actions=false ;;
         '') break ;;
     esac
 done
