@@ -17,6 +17,7 @@ mysql=""
 mariadb=""
 postgresql=""
 redis=""
+use_github_actions=""
 
 # Set project variables
 project_dir=${SPIN_PROJECT_DIRECTORY:-"$(pwd)/template"}
@@ -113,6 +114,15 @@ display_feature_menu() {
     echo -e "${queues:+$BOLD$BLUE}2) Queues (without Redis)${RESET}"
     echo -e "${reverb:+$BOLD$BLUE}3) Reverb${RESET}"
     echo -e "${schedule:+$BOLD$BLUE}4) Task Scheduling${RESET}"
+    echo "Press a number to select/deselect."
+    echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue or skip."
+}
+
+display_github_actions_menu() {
+    clear
+    echo "${BOLD}${YELLOW}Would you like to use GitHub Actions?:${RESET}"
+    echo -e "${horizon:+$BOLD$BLUE}1) Yes${RESET}"
+    echo -e "${queues:+$BOLD$BLUE}2) No${RESET}"
     echo "Press a number to select/deselect."
     echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue or skip."
 }
@@ -262,6 +272,9 @@ process_selections() {
             schedule)
                 [[ $schedule ]] && setup_schedule
                 ;;
+            github_actions)
+                [[ $use_github_actions ]] && setup_github_actions
+                ;;
         esac
     done
     
@@ -291,6 +304,11 @@ set_colors() {
         BOLD=""
         RESET=""
     fi
+}
+
+setup_github_actions() {
+    local service_name="github-actions"
+    merge_blocks "$service_name"
 }
 
 setup_horizon() {
@@ -497,6 +515,17 @@ while true; do
                 break
             fi
             ;;
+    esac
+done
+
+# Database selection loop
+while true; do
+    display_github_actions_menu
+    read -s -r -n 1 key
+    case $key in
+        1) [[ $use_github_actions ]] && use_github_actions="" || use_github_actions=true ;;
+        2) [[ $use_github_actions ]] && use_github_actions="" || use_github_actions=false ;;
+        '') break ;;
     esac
 done
 
