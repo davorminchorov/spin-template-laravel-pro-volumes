@@ -212,36 +212,45 @@ merge_blocks() {
         exit 1
     fi
 
-    echo "${BLUE}Updating Docker Compose files for $service_name...${RESET}"
+    echo "${BLUE}Updating files for $service_name...${RESET}"
 
-    find "$blocks_dir" -type f \( -name "*.yml" -o -name "*.yaml" \) | while read -r block; do
-        # Extract the filename without path and extension
-        local filename=$(basename "$block")
-        filename="${filename%.*}"
+    find "$blocks_dir" -type f | while read -r block; do
+        # Extract the relative path of the file within the blocks directory
+        local rel_path=${block#"$blocks_dir/"}
         
         # Determine the destination file
-        local destination="${project_dir}/${filename}.yml"
+        local destination="${project_dir}/${rel_path}"
         
-        # If the destination file doesn't exist, create it
-        if [[ ! -f "$destination" ]]; then
-            echo "{}" > "$destination"
+        # Create the destination directory if it doesn't exist
+        mkdir -p "$(dirname "$destination")"
+        
+        # Check if the file is a YAML file
+        if [[ "$block" =~ \.(yml|yaml)$ ]]; then
+            # If the destination file doesn't exist, create it
+            if [[ ! -f "$destination" ]]; then
+                echo "{}" > "$destination"
+            fi
+            
+            # Get relative paths for Docker volume mounts
+            local rel_block=${block#"$template_src_dir/"}
+            local rel_destination=${destination#$project_dir/}
+            
+            # Merge the block into the destination file, appending values
+            docker run --rm \
+                --user "$user_id" \
+                -v "${template_src_dir}:/src_dir" \
+                -v "${project_dir}:/dest_dir" \
+                "mikefarah/yq:$yq_version" eval-all \
+                'select(fileIndex == 0) * select(fileIndex == 1)' \
+                "/dest_dir/$rel_destination" "/src_dir/$rel_block" \
+                -i
+            
+            echo "$service_name: Updated ${rel_path}"
+        else
+            # For non-YAML files, simply copy the file
+            cp "$block" "$destination"
+            echo "$service_name: Copied ${rel_path}"
         fi
-        
-        # Get relative paths for Docker volume mounts
-        local rel_block=${block#"$template_src_dir/"}
-        local rel_destination=${destination#$project_dir/}
-        
-        # Merge the block into the destination file, appending values
-        docker run --rm \
-            --user "$user_id" \
-            -v "${template_src_dir}:/src_dir" \
-            -v "${project_dir}:/dest_dir" \
-            "mikefarah/yq:$yq_version" eval-all \
-            'select(fileIndex == 0) * select(fileIndex == 1)' \
-            "/dest_dir/$rel_destination" "/src_dir/$rel_block" \
-            -i
-        
-        echo "$service_name: Updated ${filename}.yml..."
     done
 }
 
