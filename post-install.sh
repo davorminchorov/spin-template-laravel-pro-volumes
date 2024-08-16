@@ -312,6 +312,7 @@ set_colors() {
 }
 
 setup_github_actions() {
+    set -x
     local service_name="github-actions"
     merge_blocks "$service_name"
 }
