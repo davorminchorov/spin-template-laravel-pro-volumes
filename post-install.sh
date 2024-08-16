@@ -120,11 +120,11 @@ display_feature_menu() {
 
 display_github_actions_menu() {
     clear
-    echo "${BOLD}${YELLOW}Would you like to use GitHub Actions?:${RESET}"
-    echo -e "${horizon:+$BOLD$BLUE}1) Yes${RESET}"
-    echo -e "${queues:+$BOLD$BLUE}2) No${RESET}"
+    echo "${BOLD}${YELLOW}Would you like to use GitHub Actions?${RESET}"
+    echo -e "${use_github_actions:+$BOLD$BLUE}1) Yes${RESET}"
+    echo -e "${use_github_actions:+$BOLD$BLUE}2) No${RESET}"
     echo "Press a number to select/deselect."
-    echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue or skip."
+    echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue."
 }
 
 initialize_database_service() {
@@ -243,7 +243,7 @@ merge_blocks() {
 process_selections() {
     echo "Preparing your project..."
     
-    for selection in sqlite mysql mariadb postgresql redis horizon queues reverb schedule; do
+    for selection in sqlite mysql mariadb postgresql redis horizon queues reverb schedule github_actions; do
         case "$selection" in
             sqlite)
                 [[ $sqlite ]] && setup_sqlite
@@ -518,13 +518,13 @@ while true; do
     esac
 done
 
-# Database selection loop
+# GitHub Actions selection loop
 while true; do
     display_github_actions_menu
     read -s -r -n 1 key
     case $key in
-        1) [[ $use_github_actions ]] && use_github_actions="" || use_github_actions=true ;;
-        2) [[ $use_github_actions ]] && use_github_actions="" || use_github_actions=false ;;
+        1) use_github_actions="1" ;;
+        2) use_github_actions="" ;;
         '') break ;;
     esac
 done
