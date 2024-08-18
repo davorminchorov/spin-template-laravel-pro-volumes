@@ -1,12 +1,25 @@
 # License Agreement
 
-## Personal License
-
-521 Dimensions LLC (DBA Server Side Up) grants you an ongoing, non-exclusive license to use the Docker templates (the "Templates").
+## Types of Licenses
+1. Personal License: For individual users
+2. Team License: For organizations with multiple users
 
 ### Grant of License
 
-The license grants permission to one individual (the "Licensee") to access and use the Templates through their GitHub account.
+521 Dimensions LLC (DBA Server Side Up) grants you an ongoing, non-exclusive license to use the Docker templates (the "Templates"). The license grants permission to use the Templates as specified in the type of license you have purchased (Personal or Team).
+
+## Personal License
+
+The Personal License grants permission to one individual (the "Licensee") to access and use the Templates through a single GitHub account.
+
+### Team License
+
+A Team License grants a single organization access for up to 25 individual GitHub accounts for employees within a single legal entity. This license is non-transferable between organizations.
+
+### License Activation and Transfer
+
+- Once a license is activated by inviting a GitHub account, it cannot be transferred to another account.
+- License activations are non-refundable.
 
 ### Permitted Uses
 
@@ -20,8 +33,8 @@ You are permitted to:
 You are not permitted to:
 - Use the Templates to create products that allow end users to build their own end products using the Templates or derivatives.
 - Redistribute the Templates or derivatives separately from an end product.
-- Share your access to the Templates with any other individual.
-- Use the Templates to produce anything deemed by 521 Dimensions LLC to be competitive or in conflict with their business.
+- Share your access to the Template repository with any other individual outside of your licensed accounts.
+- Use the Templates to produce anything deemed by 521 Dimensions LLC (DBA Server Side Up) to be competitive or in conflict with their business.
 - Sell or redistribute the original or modified Templates in any form, including incorporating them into a GUI or other platform for resale.
 
 ### Distribution
@@ -38,7 +51,7 @@ You are not permitted to:
   - We do not offer guaranteed response times or Service Level Agreements (SLAs).
   - One-on-one support, including screen sharing or direct troubleshooting of your specific setup, is not included.
 - For bug reports or feature requests, please open an issue on our GitHub repository [here](https://github.com/serversideup/spin-template-laravel-pro/issues).
-- We regularly update the Templates, and you will have access to these updates for the lifetime of your license.
+- We regularly update the Templates. Your license includes lifetime access to these updates at no additional cost. This means you will have access to all future versions and improvements of the Templates for as long as we continue to offer them, without having to repurchase or renew your license.
 
 We encourage users to actively participate in the community, both in seeking and providing help. This collaborative environment benefits everyone and helps improve the overall quality of the Templates.
 
@@ -90,4 +103,4 @@ This Agreement is governed by the laws of the State of Wisconsin, USA. Legal pro
 
 ### Questions?
 
-Unsure if your use case is covered by our license? Email us at support@serversideup.net with your questions.
+Unsure if your use case is covered by our license? We're here to help! Please don't hesitate to reach out to us at support@serversideup.net with any questions you may have. We're always happy to clarify and assist you in understanding how our license applies to your specific situation.
