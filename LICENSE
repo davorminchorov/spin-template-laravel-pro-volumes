@@ -4,7 +4,7 @@
 1. Personal License: For individual users
 2. Team License: For organizations with multiple users
 
-### Grant of License
+## Grant of License
 
 521 Dimensions LLC (DBA Server Side Up) grants you an ongoing, non-exclusive license to use the Docker templates (the "Templates"). The license grants permission to use the Templates as specified in the type of license you have purchased (Personal or Team).
 
@@ -12,23 +12,23 @@
 
 The Personal License grants permission to one individual (the "Licensee") to access and use the Templates through a single GitHub account.
 
-### Team License
+## Team License
 
 A Team License grants a single organization access for up to 25 individual GitHub accounts for employees within a single legal entity. This license is non-transferable between organizations.
 
-### License Activation and Transfer
+## License Activation and Transfer
 
 - Once a license is activated by inviting a GitHub account, it cannot be transferred to another account.
 - License activations are non-refundable.
 
-### Permitted Uses
+## Permitted Uses
 
 You are permitted to:
 - Use the Templates to create unlimited end products.
 - Modify the Templates to create derivative works for your own projects, including commercial works.
 - Use the Templates in open-source projects, provided you do not resell the Templates or derivatives.
 
-### Restrictions
+## Restrictions
 
 You are not permitted to:
 - Use the Templates to create products that allow end users to build their own end products using the Templates or derivatives.
@@ -37,12 +37,12 @@ You are not permitted to:
 - Use the Templates to produce anything deemed by 521 Dimensions LLC (DBA Server Side Up) to be competitive or in conflict with their business.
 - Sell or redistribute the original or modified Templates in any form, including incorporating them into a GUI or other platform for resale.
 
-### Distribution
+## Distribution
 
 - Each user must have their own GitHub account. Sharing access or redistributing the Templates through other channels is prohibited.
 - The Templates can be used to sell self-hosted applications, provided the focus is on the application, not the Templates themselves.
 
-### Support and Updates
+## Support and Updates
 
 - Community-based support is available through our private GitHub Discussions forum, which you can access with your license.
 - This forum allows users to ask questions, share knowledge, and discuss best practices.
@@ -55,7 +55,7 @@ You are not permitted to:
 
 We encourage users to actively participate in the community, both in seeking and providing help. This collaborative environment benefits everyone and helps improve the overall quality of the Templates.
 
-### Example Usage
+## Example Usage
 
 Examples of usage **allowed** by the license:
 - Creating a personal or commercial application for yourself or a client using the Templates.
@@ -87,20 +87,20 @@ We value all contributions and will give appropriate credit where possible. Howe
 
 Thank you for helping improve our project!
 
-### Enforcement
+## Enforcement
 
 If you are found to be in violation of the license, access to your Server Side Up account will be terminated, and a refund may be issued at our discretion. When license violation is blatant and malicious (such as intentionally redistributing the Components or Templates through private warez channels), no refund will be issued.
 
 The copyright of the Components and Templates is owned by 521 Dimensions LLC. You are granted only the permissions described in this license; all other rights are reserved. 521 Dimensions LLC reserves the right to pursue legal remedies for any unauthorized use of the Components or Templates outside the scope of this license.
 
-### Liability
+## Liability
 
 521 Dimensions LLC's liability to you for costs, damages, or other losses arising from your use of the Templates—including third-party claims against you—is limited to a refund of your license fee. 521 Dimensions LLC may not be held liable for any consequential damages related to your use of the Templates.
 
-### Warranties and Guarantees
+## Warranties and Guarantees
 
 This Agreement is governed by the laws of the State of Wisconsin, USA. Legal proceedings related to this Agreement may only be brought in the courts of Wisconsin. You agree to service of process at the e-mail address on your original order.
 
-### Questions?
+## Questions?
 
 Unsure if your use case is covered by our license? We're here to help! Please don't hesitate to reach out to us at support@serversideup.net with any questions you may have. We're always happy to clarify and assist you in understanding how our license applies to your specific situation.
