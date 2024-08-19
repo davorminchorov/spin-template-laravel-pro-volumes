@@ -154,29 +154,29 @@ install_node_dependencies() {
         return 1
     fi
 
-    if [[ -d "$project_dir/node_modules" ]]; then
-        echo "Existing node_modules directory found."
-        while true; do
-            read -rp "Would you like to reinstall node dependencies with yarn? (y/n) " reinstall
-            case $reinstall in
-                [Yy]) 
-                    echo "Reinstalling node dependencies with yarn..."
-                    if ! rm -rf "$project_dir/node_modules"; then
-                        echo "Error: Failed to remove existing node_modules directory." >&2
-                        return 1
-                    fi
-                    break
-                    ;;
-                [Nn]) 
-                    echo "Skipping reinstallation."
-                    return 0
-                    ;;
-                *) 
-                    echo "Please answer y or n."
-                    ;;
-            esac
-        done
-    fi
+    # if [[ -d "$project_dir/node_modules" ]]; then
+    #     echo "Existing node_modules directory found."
+    #     while true; do
+    #         read -rp "Would you like to reinstall node dependencies with yarn? (y/n) " reinstall
+    #         case $reinstall in
+    #             [Yy]) 
+    #                 echo "Reinstalling node dependencies with yarn..."
+    #                 if ! rm -rf "$project_dir/node_modules"; then
+    #                     echo "Error: Failed to remove existing node_modules directory." >&2
+    #                     return 1
+    #                 fi
+    #                 break
+    #                 ;;
+    #             [Nn]) 
+    #                 echo "Skipping reinstallation."
+    #                 return 0
+    #                 ;;
+    #             *) 
+    #                 echo "Please answer y or n."
+    #                 ;;
+    #         esac
+    #     done
+    # fi
 
     if ! cd "$project_dir"; then
         echo "Error: Failed to change to project directory '$project_dir'." >&2
@@ -397,7 +397,7 @@ setup_reverb() {
     cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
 
     echo "$service_name: Installing and configuring Laravel Reverb..."
-    $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php php artisan install:broadcasting --force --without-node
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php php artisan install:broadcasting --without-node
 
     echo "$service_name: Installing Laravel Reverb node dependencies..."
     $COMPOSE_CMD run --rm --remove-orphans --no-deps node yarn add --dev laravel-echo pusher-js
@@ -564,6 +564,7 @@ prompt_and_update_file \
     --success-msg "Updated \".infrastructure/conf/traefik/prod/traefik.yml\" with your email."
 
 # Install npm dependencies
+
 install_node_dependencies
 
 if [[ "$docker_compose_database_migration" == "true" ]]; then
