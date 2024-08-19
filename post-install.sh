@@ -28,15 +28,6 @@ docker_compose_database_migration="false"
 ###############################################
 # Functions
 ###############################################
-
-add_user_todo_item() {
-    if [ -z "$SPIN_USER_TODOS" ]; then
-        SPIN_USER_TODOS="$1"
-    else
-        SPIN_USER_TODOS="$SPIN_USER_TODOS"$'\n'"$1"
-    fi
-}
-
 configure_vite() {
     local file="${project_dir}/vite.config.js"
 
@@ -402,7 +393,22 @@ setup_redis() {
 setup_reverb() {
     local service_name="reverb"
     merge_blocks "$service_name"
-    add_user_todo_item "Complete Laravel Reverb installation (https://getspin.pro/docs/services/laravel-reverb)"
+
+    cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
+
+    echo "$service_name: Installing and configuring Laravel Reverb..."
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php php artisan install:broadcasting --force --without-node
+
+    echo "$service_name: Installing Laravel Reverb node dependencies..."
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps node yarn add --dev laravel-echo pusher-js
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps node yarn run build
+
+    echo "$service_name: Preparing env files for Reverb..."
+    line_in_file --action ensure --file ".env" --file ".env.example" "REVERB_APP_ID" "REVERB_APP_ID=my-app-id"
+    line_in_file --action ensure --file ".env" --file ".env.example" "REVERB_APP_KEY" "REVERB_APP_KEY=my-app-key"
+    line_in_file --action ensure --file ".env" --file ".env.example" "REVERB_APP_SECRET" "REVERB_APP_SECRET=my-app-secret"
+
+    cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
 }
 
 setup_schedule() {
