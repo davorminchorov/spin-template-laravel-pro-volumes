@@ -403,11 +403,6 @@ setup_reverb() {
     $COMPOSE_CMD run --rm --remove-orphans --no-deps node yarn add --dev laravel-echo pusher-js
     $COMPOSE_CMD run --rm --remove-orphans --no-deps node yarn run build
 
-    echo "$service_name: Preparing env files for Reverb..."
-    line_in_file --action ensure --file ".env" --file ".env.example" "REVERB_APP_ID" "REVERB_APP_ID=my-app-id"
-    line_in_file --action ensure --file ".env" --file ".env.example" "REVERB_APP_KEY" "REVERB_APP_KEY=my-app-key"
-    line_in_file --action ensure --file ".env" --file ".env.example" "REVERB_APP_SECRET" "REVERB_APP_SECRET=my-app-secret"
-
     cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
 }
 
