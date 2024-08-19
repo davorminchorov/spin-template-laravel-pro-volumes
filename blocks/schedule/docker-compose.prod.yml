@@ -1,7 +1,7 @@
 services:
 
   schedule:
-    image: ${SPIN_IMAGE_DOCKERFILE_PHP} # 👈 Change this if you're not using `spin deploy`
+    image: ${SPIN_IMAGE_DOCKERFILE_PHP}
     networks:
       - web-public
     volumes:
