@@ -21,7 +21,7 @@ services:
     # We use an SSH image so we can securely tunnel into the Docker network with 
     # tools like Sequel Pro, TablePlus, Sequel Ace, etc.
     # Learn more how to secure your tunnel here: https://github.com/serversideup/docker-ssh
-    image: serversideup/docker-ssh
+    image: serversideup/docker-ssh:v2.0.0
     ports:
       - target: 2222
         published: 2222
