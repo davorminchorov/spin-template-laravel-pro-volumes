@@ -33,8 +33,8 @@ services:
          ssh-ed25519 1234567890abcdefghijklmnoqrstuvwxyz user-a
          ssh-ed25519 abcdefghijklmnoqrstuvwxyz1234567890 user-b
          # End Keys"
-      # Be sure to configure the allowed IP addresses too
-      ALLOWED_IPS: "AllowUsers *@127.0.0.1"
+      # You can lock to a specific IP too (AllowUsers tunnel@1.2.3.4)
+      ALLOWED_IPS: "AllowUsers tunnel"
     volumes:
       - tunnel_ssh_host_keys:/etc/ssh/ssh_host_keys
     networks:
