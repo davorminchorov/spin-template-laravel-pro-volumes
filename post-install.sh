@@ -403,6 +403,18 @@ setup_reverb() {
     $COMPOSE_CMD run --rm --remove-orphans --no-deps node yarn add --dev laravel-echo pusher-js
     $COMPOSE_CMD run --rm --remove-orphans --no-deps node yarn run build
 
+    echo "$service_name: Preparing env files for Reverb..."
+    line_in_file --action ensure --file ".env" --file ".env.example" "REVERB_APP_ID=my-app-id"
+    line_in_file --action replace --file ".env" --file ".env.example" "REVERB_HOST" "REVERB_HOST='reverb.dev.test'"
+    line_in_file --action replace --file ".env" --file ".env.example" "REVERB_PORT" "REVERB_PORT=443"
+    line_in_file --action replace --file ".env" --file ".env.example" "REVERB_SCHEME" "REVERB_SCHEME=https"
+
+    # Update ENV example file only
+    line_in_file --action replace --file ".env.example" "VITE_REVERB_APP_KEY" "VITE_REVERB_APP_KEY=\"\${REVERB_APP_KEY}\""
+    line_in_file --action replace --file ".env.example" "VITE_REVERB_HOST" "VITE_REVERB_HOST=\"\${REVERB_HOST}\""
+    line_in_file --action replace --file ".env.example" "VITE_REVERB_PORT" "VITE_REVERB_PORT=\"\${REVERB_PORT}\""
+    line_in_file --action replace --file ".env.example" "VITE_REVERB_SCHEME" "VITE_REVERB_SCHEME=\"\${REVERB_SCHEME}\""
+
     cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
 }
 
