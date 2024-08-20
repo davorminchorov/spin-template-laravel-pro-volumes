@@ -21,13 +21,16 @@ jobs:
       docker-tags: "ghcr.io/${{ github.repository }}:${{ github.sha }}"
       dockerfile: "./Dockerfile.php"
     secrets: inherit
+
   deploy:
     needs: build
     runs-on: ubuntu-24.04
     steps:
+
       - name: Set project name and calculate MD5 hash
         run: |
           echo "PROJECT_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_ENV
+
       - uses: serversideup/github-action-docker-swarm-deploy@v2
         with:
           ssh_deploy_private_key: "${{ secrets.SSH_DEPLOY_PRIVATE_KEY }}"
@@ -44,6 +47,7 @@ jobs:
           DB_USERNAME: "${{ secrets.DB_USERNAME }}"
           DB_PASSWORD: "${{ secrets.DB_PASSWORD }}"
           REDIS_PASSWORD: "${{ secrets.REDIS_PASSWORD }}"
+          REVERB_HOST: "${{ secrets.REVERB_HOST }}"
           SPIN_APP_DOMAIN: "${{ secrets.SPIN_APP_DOMAIN }}"
           SPIN_DEPLOYMENT_ENVIRONMENT: production
           SPIN_IMAGE_DOCKERFILE_PHP: "ghcr.io/${{ github.repository }}:${{ github.sha }}"
