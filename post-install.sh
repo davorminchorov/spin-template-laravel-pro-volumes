@@ -324,6 +324,7 @@ setup_horizon() {
 
     echo "$service_name: Installing Horizon dependencies..."
     $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php composer --verbose --working-dir=/var/www/html/ require laravel/horizon
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps php php artisan horizon:install
 
     cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
 
