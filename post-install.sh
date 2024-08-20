@@ -339,11 +339,11 @@ setup_mariadb() {
 
     echo "$service_name: Updating the Laravel .env and .env.example files..."
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=mariadb"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=3306"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=root"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_HOST" "# DB_HOST=mariadb"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PORT" "# DB_PORT=3306"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "# DB_DATABASE=laravel"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_USERNAME" "# DB_USERNAME=root"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "# DB_PASSWORD=rootpassword"
 }
 
 setup_mysql() {
@@ -354,11 +354,11 @@ setup_mysql() {
 
     echo "$service_name: Updating the Laravel .env and .env.example files..."
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=mysql"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=3306"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=root"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=rootpassword"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_HOST" "DB_HOST=mysql"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PORT" "DB_PORT=3306"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "DB_DATABASE=laravel"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_USERNAME" "DB_USERNAME=root"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "DB_PASSWORD=rootpassword"
 }
 
 setup_postgresql() {
@@ -369,11 +369,11 @@ setup_postgresql() {
 
     echo "$service_name: Updating the Laravel .env and .env.example files..."
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=pgsql"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_HOST" "DB_HOST=postgres"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_PORT=5432"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_DATABASE" "DB_DATABASE=laravel"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_USERNAME" "DB_USERNAME=postgres"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PASSWORD" "DB_PASSWORD=postgrespassword"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_HOST" "DB_HOST=postgres"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PORT" "DB_PORT=5432"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "DB_DATABASE=laravel"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_USERNAME" "DB_USERNAME=postgres"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "DB_PASSWORD=postgrespassword"
 }
 
 setup_queues() {
