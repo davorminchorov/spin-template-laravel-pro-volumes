@@ -30,5 +30,5 @@ services:
         - "traefik.http.routers.laravel-reverb.entrypoints=websecure"
         - "traefik.http.routers.laravel-reverb.tls=true"
         - "traefik.http.routers.laravel-reverb.tls.certresolver=letsencryptresolver"
-        - "traefik.http.services.laravel-reverb.loadbalancer.server.port=8080"
+        - "traefik.http.services.laravel-reverb.loadbalancer.server.port=8000"
         - "traefik.http.services.laravel-reverb.loadbalancer.server.scheme=http"

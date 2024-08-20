@@ -2,7 +2,7 @@ services:
 
   reverb:
     entrypoint: ''
-    command: ["php", "/var/www/html/artisan", "reverb:start"]
+    command: ["php", "/var/www/html/artisan", "--port=8000", "reverb:start"]
     healthcheck:
       disable: true
     depends_on:
