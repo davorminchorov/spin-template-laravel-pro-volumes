@@ -24,6 +24,10 @@ ARG GROUP_ID
 # Switch to root so we can set the user ID and group ID
 USER root
 
+# Trust the self-signed certificate
+COPY .infrastructure/conf/traefik/dev/certificates/ssu-ca.pem /usr/local/share/ca-certificates/ssu-ca.crt
+RUN update-ca-certificates
+
 # Set the user ID and group ID for www-data
 RUN docker-php-serversideup-set-id www-data $USER_ID:$GROUP_ID  && \
     docker-php-serversideup-set-file-permissions --owner $USER_ID:$GROUP_ID --service nginx
