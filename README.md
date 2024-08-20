@@ -38,7 +38,7 @@ We work very hard to have quality documentation. Be sure to read the docs to get
 - **[GitHub](https://github.com/serversideup/spin-template-laravel-pro)** for source code, bug reports, and project management.
 - **[Get Professional Help](https://serversideup.net/professional-support)** - If you need video + screen-sharing support, we offer that too.
 
-## Contributing
+## ❤️ Contributing
 We're a community that strives on helping each other. If you're interested in contributing to this project, here are some ways you can help:
 
 - **Bug Report**: If you're experiencing an issue while using these images, please [create an issue](https://github.com/serversideup/spin-template-laravel-pro/issues/new/choose).
