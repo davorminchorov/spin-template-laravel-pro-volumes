@@ -46,5 +46,3 @@ We're a community that strives on helping each other. If you're interested in co
 - **Documentation**: If something doesn't make sense, take a screenshot and [create an issue](https://github.com/serversideup/spin-template-laravel-pro/issues/new/choose)
 - **Community Support**: Help others on [GitHub Discussions](https://github.com/serversideup/spin-template-laravel-pro/discussions) or [Discord](https://serversideup.net/discord).
 - **Security Report**: Report critical security issues via [our responsible disclosure policy](https://www.notion.so/Responsible-Disclosure-Policy-421a6a3be1714d388ebbadba7eebbdc8).
-
-Need help getting started? Join our Discord community and we'll help you out!
