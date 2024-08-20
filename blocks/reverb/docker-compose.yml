@@ -3,3 +3,5 @@ services:
   reverb:
     entrypoint: ''
     command: ["php", "/var/www/html/artisan", "reverb:start"]
+    healthcheck:
+      disable: true
