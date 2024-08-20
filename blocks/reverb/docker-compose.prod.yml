@@ -26,7 +26,7 @@ services:
         window: 120s
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.laravel-reverb.rule=Host(`myapp.example.com`) && (PathPrefix(`/app`) || PathPrefix(`/apps`)"
+        - "traefik.http.routers.laravel-reverb.rule=Host(`${REVERB_HOST}`)"
         - "traefik.http.routers.laravel-reverb.entrypoints=websecure"
         - "traefik.http.routers.laravel-reverb.tls=true"
         - "traefik.http.routers.laravel-reverb.tls.certresolver=letsencryptresolver"
