@@ -403,6 +403,8 @@ setup_reverb() {
     $COMPOSE_CMD run --rm --remove-orphans --no-deps node yarn add --dev laravel-echo pusher-js
     $COMPOSE_CMD run --rm --remove-orphans --no-deps node yarn run build
 
+    set -x
+    trap read DEBUG
     echo "$service_name: Preparing env files for Reverb..."
     line_in_file --action replace --file ".env" "REVERB_HOST" "REVERB_HOST=\"reverb.dev.test\""
     line_in_file --action replace --file ".env" "REVERB_PORT" "REVERB_PORT=443"
