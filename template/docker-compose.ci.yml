@@ -17,6 +17,7 @@ services:
       - .:/usr/src/app/
     networks: 
       - ci
+    working_dir: /usr/src/app/
 
   mailpit:
     image: axllent/mailpit
