@@ -1,6 +1,6 @@
 services:
 
-  queues:
+  queue:
     image: ${SPIN_IMAGE_DOCKERFILE_PHP}
     networks:
       - web-public

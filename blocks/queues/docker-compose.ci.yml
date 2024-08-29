@@ -1,6 +1,6 @@
 services:
 
-  queues:
+  queue:
     build:
       target: ci
       dockerfile: Dockerfile.php
