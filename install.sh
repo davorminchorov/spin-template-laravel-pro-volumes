@@ -11,6 +11,8 @@ docker pull "$SPIN_PHP_DOCKER_IMAGE"
 
 laravel_framework_args=("$@")
 
+echo "TEST 👋👋👋"
+
 ###############################################
 # Configure "SPIN_PROJECT_DIRECTORY" variable
 # This variable MUST be the ABSOLUTE path
