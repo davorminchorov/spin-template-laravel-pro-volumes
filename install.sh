@@ -4,14 +4,12 @@ set -e # Exit on error
 ###############################################
 # Prepare enviornment
 ###############################################
-
 # Make sure the image is up to date before running
 SPIN_PHP_DOCKER_IMAGE="${SPIN_PHP_DOCKER_IMAGE:-serversideup/php:8.3-cli}"
 export SPIN_PHP_DOCKER_IMAGE
 docker pull "$SPIN_PHP_DOCKER_IMAGE"
 
-# Save anything passed to the script as an array
-framework_args=("$@")
+laravel_framework_args=("$@")
 
 ###############################################
 # Configure "SPIN_PROJECT_DIRECTORY" variable
@@ -20,8 +18,7 @@ framework_args=("$@")
 
 # Determine the project directory based on the SPIN_ACTION
 if [ "$SPIN_ACTION" == "new" ]; then
-  # Use the first framework argument or default to "laravel"
-  laravel_project_directory=${framework_args[0]:-laravel}
+  laravel_project_directory=${laravel_framework_args[0]:-laravel}
   # Set the absolute path to the project directory
   SPIN_PROJECT_DIRECTORY="$(pwd)/$laravel_project_directory"
 
@@ -40,7 +37,7 @@ export SPIN_PROJECT_DIRECTORY
 # Default function to run for new projects
 new(){
   # Use the current working directory for our install command
-  docker run --rm -v "$(pwd):/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" "$SPIN_PHP_DOCKER_IMAGE" composer --no-cache create-project laravel/laravel "${framework_args[@]}"
+  docker run --rm -v "$(pwd):/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" "$SPIN_PHP_DOCKER_IMAGE" composer --no-cache create-project laravel/laravel "${laravel_framework_args[@]}"
 
   init
 }
