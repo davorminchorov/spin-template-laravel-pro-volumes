@@ -4,14 +4,13 @@ set -e # Exit on error
 ###############################################
 # Prepare enviornment
 ###############################################
-
 # Make sure the image is up to date before running
 SPIN_PHP_DOCKER_IMAGE="${SPIN_PHP_DOCKER_IMAGE:-serversideup/php:8.3-cli}"
 export SPIN_PHP_DOCKER_IMAGE
 docker pull "$SPIN_PHP_DOCKER_IMAGE"
 
-# Save anything passed to the script as an array
-framework_args=("$@")
+# Save anything passed to the script as an array, or use existing framework_args if set
+framework_args=("${framework_args[@]:-$@}")
 
 ###############################################
 # Configure "SPIN_PROJECT_DIRECTORY" variable
@@ -56,7 +55,7 @@ init(){
 ###############################################
 
 # When spin calls this script, it already sets a variable
-# called $SPIN_ACTION (that will have a value of "new" or "init)
+# called $SPIN_ACTION (that will have a value of "new" or "init")
 
 # Check to see if SPIN_ACTION function exists
 if type "$SPIN_ACTION" &>/dev/null; then
