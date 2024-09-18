@@ -1,4 +1,10 @@
 services:
+
+  php:
+    depends_on:
+      mariadb:
+        condition: service_started
+
   mariadb:
     networks:
       - development

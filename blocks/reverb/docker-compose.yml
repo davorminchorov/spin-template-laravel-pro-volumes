@@ -6,4 +6,7 @@ services:
     healthcheck:
       disable: true
     depends_on:
-      - php
+      php:
+        condition: service_started
+      spin-database:
+        condition: service_healthy

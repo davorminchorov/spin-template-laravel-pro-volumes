@@ -4,7 +4,5 @@ services:
     image: traefik:v3.1
 
   php:
-    environment:
-      PHP_FPM_POOL_NAME: "laravel_web"
     depends_on:
       - traefik

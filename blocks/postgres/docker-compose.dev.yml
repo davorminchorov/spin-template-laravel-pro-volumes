@@ -1,4 +1,10 @@
 services:
+
+  php:
+    depends_on:
+      postgres:
+        condition: service_started
+
   postgres:
     networks:
       - development

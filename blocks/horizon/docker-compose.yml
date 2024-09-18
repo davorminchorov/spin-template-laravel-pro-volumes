@@ -11,5 +11,7 @@ services:
       start_period: 40s
       start_interval: 5s
     depends_on:
-      - redis
-      - php
+      redis:
+        condition: service_healthy
+      php:
+        condition: service_started

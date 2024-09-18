@@ -2,10 +2,15 @@
 
 # Capture Spin Variables
 SPIN_ACTION=${SPIN_ACTION:-"install"}
-SPIN_PHP_DOCKER_IMAGE="${SPIN_PHP_DOCKER_IMAGE:-serversideup/php:8.3-cli}"
+SPIN_PHP_VERSION="${SPIN_PHP_VERSION:-8.3}"
+SPIN_PHP_DOCKER_IMAGE="${SPIN_PHP_DOCKER_IMAGE:-serversideup/php:${SPIN_PHP_VERSION}-cli}"
 
-# Set dependency versions
-yq_version="4.44.2"
+# Set project variables
+spin_template_type="pro"
+javascript_package_manager="yarn"
+project_dir=${SPIN_PROJECT_DIRECTORY:-"$(pwd)/template"}
+php_dockerfile="Dockerfile.php"
+docker_compose_database_migration="false"
 
 # Initialize the service variables
 horizon=""
@@ -17,25 +22,588 @@ mysql=""
 mariadb=""
 postgresql=""
 redis=""
-use_github_actions=false
+use_github_actions=""
 
-# Set project variables
-project_dir=${SPIN_PROJECT_DIRECTORY:-"$(pwd)/template"}
+###############################################
+# Pro - Variables
+###############################################
 template_src_dir=${SPIN_TEMPLATE_TEMPORARY_SRC_DIR:-"$(pwd)"}
-user_id=${SPIN_USER_ID:-$(id -u)}
-docker_compose_database_migration="false"
+
+# Set dependency versions
+yq_version="4.44.2"
 
 ###############################################
 # Functions
 ###############################################
+add_php_extensions() {
+    echo "${BLUE}Adding custom PHP extensions...${RESET}"
+    local dockerfile="$project_dir/$php_dockerfile"
+    
+    # Check if Dockerfile exists
+    if [ ! -f "$dockerfile" ]; then
+        echo "Error: $dockerfile not found."
+        return 1
+    fi
+    
+    # Uncomment the USER root line
+    line_in_file --action replace --file "$dockerfile" "# USER root" "USER root"
+    
+    # Add RUN command to install extensions
+    local extensions_string="${php_extensions[*]}"
+    line_in_file --action replace --file "$dockerfile" "# RUN install-php-extensions" "RUN install-php-extensions $extensions_string"
+    
+    echo "Custom PHP extensions added."
+}
+
+configure_sqlite() {
+    local service_name="sqlite"
+    local init_sqlite=true
+    local laravel_default_sqlite_database_path="$project_dir/database/database.sqlite"
+    local spin_sqllite_datbase_path="$project_dir/.infrastructure/volume_data/sqlite/database.sqlite"
+
+    if [ "$spin_template_type" == "pro" ]; then
+        merge_blocks "$service_name"
+    fi
+
+    if [[ "$SPIN_ACTION" == "init" ]] && grep -q 'DB_CONNECTION=sqlite' "$SPIN_PROJECT_DIRECTORY/.env"; then
+        echo "${BOLD}${RED}⚠️  WARNING ⚠️${RESET}"
+        echo "👉 We detected SQLite being used on this project."
+        echo "👉 We need to update the .env file to use the correct path."
+        echo "${BOLD}${RED}🚨 This means you may need to manually move your data to the path for the database.${RESET}"
+        echo ""
+        read -n 1 -r -p "${BOLD}${YELLOW} Would you like us to automatically configure SQLite for you? [Y/n]${RESET} " response
+        echo ""
+
+        if [[ $response =~ ^([nN][oO]|[nN])$ ]]; then
+            echo ""
+            echo "${BOLD}${YELLOW}🚨 You will need to manually move your SQLite database to the correct path.${RESET}"
+            echo "${BOLD}${YELLOW}🚨 The path is: ${RESET}${spin_sqllite_datbase_path}"
+            echo ""
+            init_sqlite=false
+            add_user_todo_item "Move your SQLite database to \"${spin_sqllite_datbase_path}\"."
+        fi
+    fi
+
+    if [ "$init_sqlite" == true ]; then
+        # Create the SQLite database folder
+        mkdir -p "$project_dir/.infrastructure/volume_data/sqlite"
+
+        echo "$service_name: Updating the Laravel .env and .env.example files..."
+        line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=sqlite"
+        line_in_file --action after --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_DATABASE=/var/www/html/.infrastructure/volume_data/sqlite/database.sqlite"
+
+        # Check if the default Laravel SQLite database exists and the Spin SQLite database doesn't
+        if [[ -f "$laravel_default_sqlite_database_path" && ! -f "$spin_sqllite_datbase_path" ]]; then
+            echo "${BLUE}Moving existing SQLite database to new location...${RESET}"
+            mv "$laravel_default_sqlite_database_path" "$spin_sqllite_datbase_path"
+            echo "SQLite database moved successfully."
+        elif [[ ! -f "$laravel_default_sqlite_database_path" && ! -f "$spin_sqllite_datbase_path" && "$instal" ]]; then
+            echo "No existing SQLite database found. Running migrations to create a new one..."
+            # Run the migrations to create the SQLite database
+            docker run --rm \
+                -v "$project_dir:/var/www/html" \
+                --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" \
+                -e COMPOSER_CACHE_DIR=/dev/null \
+                -e "SHOW_WELCOME_MESSAGE=false" \
+                "$SPIN_PHP_DOCKER_IMAGE" \
+                php /var/www/html/artisan migrate --force
+        else
+            echo "SQLite database already exists in the correct location. Skipping migration."
+        fi
+    fi
+}
+
+install_node_dependencies() {
+    if [[ ! -d "$project_dir" ]]; then
+        echo "Error: Project directory '$project_dir' does not exist." >&2
+        return 1
+    fi
+
+    if ! cd "$project_dir"; then
+        echo "Error: Failed to change to project directory '$project_dir'." >&2
+        return 1
+    fi
+
+    if [[ "$SPIN_INSTALL_DEPENDENCIES" == "true" ]]; then
+        echo "${BLUE}Installing Node dependencies with ${javascript_package_manager}...${RESET}"
+        if ! $COMPOSE_CMD run --no-deps --rm --remove-orphans node ${javascript_package_manager} install; then
+            echo "${BOLD}${RED}Error: Failed to install node dependencies.${RESET}" >&2
+            return 1
+        fi
+        echo "Node dependencies installed successfully."
+    fi
+}
+
+process_selections() { 
+    [[ $sqlite ]] && configure_sqlite
+    
+    if [ "$spin_template_type" = "pro" ]; then
+        [[ $schedule ]] && configure_schedule
+        [[ $mysql ]] && configure_mysql
+        [[ $mariadb ]] && configure_mariadb
+        [[ $postgresql ]] && configure_postgresql
+        [[ $redis ]] && configure_redis
+        [[ $horizon ]] && configure_horizon
+        [[ $queues ]] && configure_queues
+        [[ $reverb ]] && configure_reverb
+        [[ $use_github_actions ]] && configure_github_actions
+    fi
+    echo "Services configured."
+}
+
+select_database() {
+    local selection_made=false
+    while ! $selection_made; do
+        clear
+        echo "${BOLD}${YELLOW}What database engine(s) would you like to use?${RESET}"
+        echo -e "${sqlite:+$BOLD$BLUE}1) SQLite${RESET}"
+        if [ "$spin_template_type" = "pro" ]; then
+            echo -e "${mysql:+$BOLD$BLUE}2) MySQL${RESET}"
+            echo -e "${mariadb:+$BOLD$BLUE}3) MariaDB${RESET}"
+            echo -e "${postgresql:+$BOLD$BLUE}4) PostgreSQL${RESET}"
+            if [[ $horizon ]]; then
+                echo -e "${BOLD}${BLUE}5) Redis (Required for Horizon)${RESET}"
+            else
+                echo -e "${redis:+$BOLD$BLUE}5) Redis${RESET}"
+            fi
+        else
+            echo -e "${DIM}2) MySQL (Pro)${RESET}"
+            echo -e "${DIM}3) MariaDB (Pro)${RESET}"
+            echo -e "${DIM}4) PostgreSQL (Pro)${RESET}"
+            echo -e "${DIM}5) Redis (Pro)${RESET}"
+        fi
+        show_spin_pro_notice
+        echo "Press a number to select/deselect. Press ${BOLD}${BLUE}ENTER${RESET} to continue."
+
+        read -s -n 1 key
+        case $key in
+            1) [[ $sqlite ]] && sqlite="" || sqlite="1" ;;
+            2) 
+                if [ "$spin_template_type" = "pro" ]; then
+                    [[ $mysql ]] && mysql="" || mysql="1"
+                fi
+                ;;
+            3) 
+                if [ "$spin_template_type" = "pro" ]; then
+                    [[ $mariadb ]] && mariadb="" || mariadb="1"
+                fi
+                ;;
+            4) 
+                if [ "$spin_template_type" = "pro" ]; then
+                    [[ $postgresql ]] && postgresql="" || postgresql="1"
+                fi
+                ;;
+            5) 
+                if [ "$spin_template_type" = "pro" ]; then
+                    if [[ ! $horizon ]]; then
+                        [[ $redis ]] && redis="" || redis="1"
+                    fi
+                fi
+                ;;
+            '') 
+                if [ "$spin_template_type" = "pro" ] && [[ $horizon && ! $redis ]]; then
+                    echo -e "${RED}Redis is required for Horizon. Redis has been automatically selected.${RESET}"
+                    redis="1"
+                    read -n 1 -s -r -p "Press any key to continue..."
+                else
+                    selection_made=true
+                fi
+                ;;
+        esac
+    done
+}
+
+select_features() {
+    while true; do
+        clear
+        echo "${BOLD}${YELLOW}Select which Laravel features you'd like to use:${RESET}"
+        if [ "$spin_template_type" = "pro" ]; then
+            echo -e "${schedule:+$BOLD$BLUE}1) Task Scheduling${RESET}"
+            echo -e "${horizon:+$BOLD$BLUE}2) Horizon${RESET}"
+            echo -e "${queues:+$BOLD$BLUE}3) Queues (without Redis)${RESET}"
+            echo -e "${reverb:+$BOLD$BLUE}4) Reverb${RESET}"
+        else
+            echo -e "${DIM}1) Task Scheduling (Pro)${RESET}"
+            echo -e "${DIM}2) Horizon (Pro)${RESET}"
+            echo -e "${DIM}3) Queues (Pro)${RESET}"
+            echo -e "${DIM}4) Reverb (Pro)${RESET}"
+        fi
+        show_spin_pro_notice
+        echo "Press a number to select/deselect."
+        echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue or skip."
+
+        read -s -r -n 1 key
+        case $key in
+            1) 
+                if [ "$spin_template_type" = "pro" ]; then
+                    [[ $schedule ]] && schedule="" || schedule="1"
+                fi
+                ;;
+            2) 
+                if [ "$spin_template_type" = "pro" ]; then
+                    if [[ $horizon ]]; then
+                        horizon=""
+                        redis=""
+                    else
+                        horizon="1"
+                        redis="1"
+                    fi
+                fi
+                ;;
+            3) 
+                if [ "$spin_template_type" = "pro" ]; then
+                    [[ $queues ]] && queues="" || queues="1"
+                fi
+                ;;
+            4) 
+                if [ "$spin_template_type" = "pro" ]; then
+                    [[ $reverb ]] && reverb="" || reverb="1"
+                fi
+                ;;
+            '') break ;;
+        esac
+    done
+}
+
+select_github_actions() {
+    while true; do
+        clear
+        echo "${BOLD}${YELLOW}Would you like to use GitHub Actions?${RESET}"
+        if [ "$spin_template_type" = "pro" ]; then
+            if [ "$use_github_actions" = "1" ]; then
+                echo -e "${BOLD}${BLUE}1) Yes${RESET}"
+                echo "2) No"
+            else
+                echo "1) Yes"
+                echo -e "${BOLD}${BLUE}2) No${RESET}"
+            fi
+        else
+            echo -e "${DIM}1) Yes (Pro)${RESET}"
+            echo -e "${BOLD}${BLUE}2) No${RESET}"
+            show_spin_pro_notice
+        fi
+        echo "Press a number to select/deselect."
+        echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue."
+
+        read -s -n 1 key
+        case $key in
+            1) 
+                if [ "$spin_template_type" = "pro" ]; then
+                    use_github_actions="1"
+                fi
+                ;;
+            2) use_github_actions="" ;;
+            '') break ;;
+        esac
+    done
+}
+
+select_javascript_package_manager() {
+    if [ "$spin_template_type" = "pro" ]; then
+        while true; do
+            clear
+            echo "${BOLD}${YELLOW}Choose your JavaScript package manager:${RESET}"
+            if [ "$javascript_package_manager" = "yarn" ]; then
+                echo -e "${BOLD}${BLUE}1) yarn${RESET}"
+                echo "2) npm"
+            else
+                echo "1) yarn"
+                echo -e "${BOLD}${BLUE}2) npm${RESET}"
+            fi
+            echo "Press a number to select."
+            echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue."
+
+            read -s -n 1 key
+            case $key in
+                1) javascript_package_manager="yarn" ;;
+                2) javascript_package_manager="npm" ;;
+                '') break ;;
+            esac
+        done
+    else
+        # For open-source, only yarn is available
+        javascript_package_manager="yarn"
+        clear
+        echo "${BOLD}${YELLOW}Choose your JavaScript package manager:${RESET}"
+        echo -e "${BOLD}${BLUE}1) yarn${RESET}"
+        echo -e "${DIM}2) npm (Pro)${RESET}"
+        show_spin_pro_notice
+        echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue or skip."
+
+        read -s -n 1 key
+        case $key in
+            '') ;;
+            *) select_javascript_package_manager ;;
+        esac
+    fi
+}
+
+select_php_extensions() {
+    clear
+    echo "${BOLD}${YELLOW}What PHP extensions would you like to include?${RESET}"
+    echo ""
+    echo "${BLUE}Default extensions:${RESET}"
+    echo "ctype, curl, dom, fileinfo, filter, hash, mbstring, mysqli,"
+    echo "opcache, openssl, pcntl, pcre, pdo_mysql, pdo_pgsql, redis,"
+    echo "session, tokenizer, xml, zip"
+    echo ""
+    echo "${BLUE}Learn more here:${RESET}"
+    echo "https://serversideup.net/docker-php/default-config"
+    echo ""
+    echo "Enter additional extensions as a comma-separated list (no spaces).${RESET}"
+    echo "Example: gd,imagick,intl"
+    echo ""
+    echo "${BOLD}${YELLOW}Enter comma separated extensions below or press ${BOLD}${BLUE}ENTER${RESET} ${BOLD}${YELLOW}to use default extensions.${RESET}"
+    read -r extensions_input
+
+    # Remove spaces and split into array
+    IFS=',' read -r -a php_extensions <<< "${extensions_input// /}"
+
+    # Print selected extensions for confirmation
+    while true; do
+        if [ ${#php_extensions[@]} -gt 0 ]; then
+            clear
+            echo "${BOLD}${YELLOW}These extensions names must be supported in the PHP version you selected.${RESET}"
+            echo "Learn more here: https://serversideup.net/docker-php/available-extensions"
+            echo ""
+            echo "${BLUE}PHP Version:${RESET} $SPIN_PHP_VERSION"
+            echo "${BLUE}Extensions:${RESET}"
+            for extension in "${php_extensions[@]}"; do
+                echo "- $extension"
+            done
+            echo ""
+            echo "${BOLD}${YELLOW}Are these selections correct?${RESET}"
+            echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue or ${BOLD}${BLUE}any other key${RESET} to go back and change selections."
+            read -n 1 -s -r key
+            echo
+
+            if [[ $key == "" ]]; then
+                echo "${GREEN}Continuing with selected extensions...${RESET}"
+                break
+            else
+                echo "${YELLOW}Returning to extension selection...${RESET}"
+                select_php_extensions
+                return
+            fi
+        else
+            break
+        fi
+    done
+}
+
+set_colors() {
+    if [[ -t 1 ]]; then
+        RAINBOW="
+            $(printf '\033[38;5;196m')
+            $(printf '\033[38;5;202m')
+            $(printf '\033[38;5;226m')
+            $(printf '\033[38;5;082m')
+            "
+        RED=$(printf '\033[31m')
+        GREEN=$(printf '\033[32m')
+        YELLOW=$(printf '\033[33m')
+        BLUE=$(printf '\033[34m')
+        DIM=$(printf '\033[2m')
+        BOLD=$(printf '\033[1m')
+        RESET=$(printf '\033[m')
+    else
+        RAINBOW=""
+        RED=""
+        GREEN=""
+        YELLOW=""
+        BLUE=""
+        DIM=""
+        BOLD=""
+        RESET=""
+    fi
+}
+
+show_spin_pro_notice() {
+    if [ "$spin_template_type" != "pro" ]; then
+        echo
+        echo "${BOLD}${GREEN}Unlock Pro features at 👉 https://getspin.pro${RESET}"
+        echo
+    fi
+}
+
+###############################################
+# Pro - Functions
+###############################################
+configure_github_actions() {
+    local service_name="github-actions"
+    merge_blocks "$service_name"
+}
+
+configure_horizon() {
+    local service_name="horizon"
+    local current_dir=""
+
+    current_dir=$(pwd)
+
+    cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
+
+    if [[ "$SPIN_ACTION" == "new" ]]; then
+        echo "$service_name: Installing Horizon dependencies..."
+        $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php composer --verbose --working-dir=/var/www/html/ require laravel/horizon
+        $COMPOSE_CMD run --rm --remove-orphans --no-deps php php artisan horizon:install
+    fi
+
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "QUEUE_CONNECTION" "QUEUE_CONNECTION=redis"
+
+    cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
+
+    merge_blocks "$service_name"
+    
+}
+
+configure_mailpit() {
+    echo "Configuring Mailpit..."
+    
+    local files=("$project_dir/.env" "$project_dir/.env.example")
+    
+    for file in "${files[@]}"; do
+        if line_in_file --action search --file "$file" "MAIL_DRIVER"; then
+            line_in_file --action replace --file "$file" "MAIL_DRIVER" "MAIL_DRIVER=smtp"
+        fi
+        
+        if line_in_file --action search --file "$file" "MAIL_MAILER"; then
+            line_in_file --action replace --file "$file" "MAIL_MAILER" "MAIL_MAILER=smtp"
+        fi
+        
+        line_in_file --action replace --file "$file" "MAIL_HOST" "MAIL_HOST=mailpit"
+        line_in_file --action replace --file "$file" "MAIL_PORT" "MAIL_PORT=1025"
+        line_in_file --action replace --file "$file" "MAIL_USERNAME" "MAIL_USERNAME="
+        line_in_file --action replace --file "$file" "MAIL_PASSWORD" "MAIL_PASSWORD="
+        line_in_file --action replace --file "$file" "MAIL_ENCRYPTION" "MAIL_ENCRYPTION="
+    done
+}
+
+configure_mariadb() {
+    docker_compose_database_migration="true"
+    local service_name="mariadb"
+
+    merge_blocks "$service_name"
+
+    echo "$service_name: Updating the Laravel .env and .env.example files..."
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_HOST" "DB_HOST=mariadb"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PORT" "DB_PORT=3306"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "DB_DATABASE=laravel"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_USERNAME" "DB_USERNAME=root"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "DB_PASSWORD=rootpassword"
+}
+
+configure_mysql() {
+    docker_compose_database_migration="true"
+    local service_name="mysql"
+
+    merge_blocks "$service_name"
+
+    echo "$service_name: Updating the Laravel .env and .env.example files..."
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_HOST" "DB_HOST=mysql"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PORT" "DB_PORT=3306"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "DB_DATABASE=laravel"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_USERNAME" "DB_USERNAME=root"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "DB_PASSWORD=rootpassword"
+}
+
+configure_postgresql() {
+    docker_compose_database_migration="true"
+    local service_name="postgres"
+
+    merge_blocks "$service_name"
+
+    echo "$service_name: Updating the Laravel .env and .env.example files..."
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=pgsql"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_HOST" "DB_HOST=postgres"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PORT" "DB_PORT=5432"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "DB_DATABASE=laravel"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_USERNAME" "DB_USERNAME=postgres"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "DB_PASSWORD=postgrespassword"
+}
+
+configure_queues() {
+    merge_blocks "queues"
+}
+
+configure_redis() {
+    local service_name="redis"
+
+    merge_blocks "$service_name"
+
+    echo "$service_name: Updating the Laravel .env and .env.example files..."
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "REDIS_HOST" "REDIS_HOST=redis"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "REDIS_PASSWORD" "REDIS_PASSWORD=redispassword"
+}
+
+configure_reverb() {
+    local service_name="reverb"
+    local current_dir=""
+
+    current_dir=$(pwd)
+    merge_blocks "$service_name"
+
+    cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
+    # Determine which database is selected
+    if [ "$mysql" = "1" ]; then
+        spin_database="mysql"
+    elif [ "$mariadb" = "1" ]; then
+        spin_database="mariadb"
+    elif [ "$postgresql" = "1" ]; then
+        spin_database="postgres"
+    else
+        spin_database="sqlite"
+    fi
+
+    if [ "$spin_database" = "sqlite" ]; then
+        # Remove the spin-database dependency for SQLite
+        line_in_file --action delete --file "docker-compose.yml" 'spin-database:'
+        line_in_file --action delete --file "docker-compose.yml" 'condition: service_healthy'
+    else
+        # Update the docker-compose.yml file to include the correct database
+        line_in_file --action exact --file "docker-compose.yml" "spin-database" "$spin_database"
+    fi
+
+    echo "$service_name: Installing and configuring Laravel Reverb..."
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELLOME_MESSAGE=false" php php artisan install:broadcasting --without-node
+
+    echo "$service_name: Installing Laravel Reverb node dependencies..."
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps node ${javascript_package_manager} add --dev laravel-echo pusher-js
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps node ${javascript_package_manager} run build
+
+    echo "$service_name: Preparing env files for Reverb..."
+    line_in_file --action replace --file ".env" "REVERB_HOST" "REVERB_HOST=\"reverb.dev.test\""
+    line_in_file --action replace --file ".env" "REVERB_PORT" "REVERB_PORT=443"
+    line_in_file --action replace --file ".env" "REVERB_SCHEME" "REVERB_SCHEME=https"
+
+    # Update ENV example file only
+    line_in_file --action replace --file ".env.example" "REVERB_APP_ID" "REVERB_APP_ID=999999"
+    line_in_file --action replace --file ".env.example" "REVERB_APP_KEY" "REVERB_APP_KEY=changemeabcde1234567"
+    line_in_file --action replace --file ".env.example" "REVERB_APP_SECRET" "REVERB_APP_SECRET=changeme123456789abcde"
+    line_in_file --action replace --file ".env.example" "REVERB_HOST" "REVERB_HOST=\"reverb.dev.test\""
+    line_in_file --action replace --file ".env.example" "REVERB_PORT" "REVERB_PORT=443"
+    line_in_file --action replace --file ".env.example" "REVERB_SCHEME" "REVERB_SCHEME=https"
+    line_in_file --action replace --file ".env.example" "VITE_REVERB_APP_KEY" "VITE_REVERB_APP_KEY=\"\${REVERB_APP_KEY}\""
+    line_in_file --action replace --file ".env.example" "VITE_REVERB_HOST" "VITE_REVERB_HOST=\"\${REVERB_HOST}\""
+    line_in_file --action replace --file ".env.example" "VITE_REVERB_PORT" "VITE_REVERB_PORT=\"\${REVERB_PORT}\""
+    line_in_file --action replace --file ".env.example" "VITE_REVERB_SCHEME" "VITE_REVERB_SCHEME=\"\${REVERB_SCHEME}\""
+
+    cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
+}
+
+configure_schedule() {
+    merge_blocks "schedule"
+}
+
 configure_vite() {
     local file="${project_dir}/vite.config.js"
 
-    echo "Vite: Configuring Vite..."
+    echo "${BLUE}Configuring Vite...${RESET}"
 
     # Check if the file exists
     if [ ! -f "$file" ]; then
-        echo "${RED}Error: $file does not exist.${RESET}"
+        echo "❌ ${BOLD}${RED}Error: $file does not exist.${RESET}"
         return 1
     fi
 
@@ -83,55 +651,15 @@ configure_vite() {
     echo "Vite configuration updated successfully."
 }
 
-display_database_menu() {
-    clear
-    echo "${BOLD}${YELLOW}What database engine(s) would you like to use?${RESET}"
-    echo -e "${sqlite:+$BOLD$BLUE}1) SQLite${RESET}"
-    echo -e "${mysql:+$BOLD$BLUE}2) MySQL${RESET}"
-    echo -e "${mariadb:+$BOLD$BLUE}3) MariaDB${RESET}"
-    echo -e "${postgresql:+$BOLD$BLUE}4) PostgreSQL${RESET}"
-    if [[ $horizon ]]; then
-        echo -e "${BOLD}${BLUE}5) Redis (Required for Horizon)${RESET}"
-    else
-        echo -e "${redis:+$BOLD$BLUE}5) Redis${RESET}"
-    fi
-    echo "Press a number to select/deselect. Press ENTER to continue."
-}
-
-display_feature_menu() {
-    clear
-    echo "${BOLD}${YELLOW}Select which Laravel features you'd like to use:${RESET}"
-    echo -e "${horizon:+$BOLD$BLUE}1) Horizon${RESET}"
-    echo -e "${queues:+$BOLD$BLUE}2) Queues (without Redis)${RESET}"
-    echo -e "${reverb:+$BOLD$BLUE}3) Reverb${RESET}"
-    echo -e "${schedule:+$BOLD$BLUE}4) Task Scheduling${RESET}"
-    echo "Press a number to select/deselect."
-    echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue or skip."
-}
-
-display_github_actions_menu() {
-    clear
-    echo "${BOLD}${YELLOW}Would you like to use GitHub Actions?${RESET}"
-    if [ "$use_github_actions" = true ]; then
-        echo -e "${BOLD}${BLUE}1) Yes${RESET}"
-        echo "2) No"
-    else
-        echo "1) Yes"
-        echo -e "${BOLD}${BLUE}2) No${RESET}"
-    fi
-    echo "Press a number to select/deselect."
-    echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue."
-}
-
 initialize_database_service() {
     stop_running_containers
 
-    echo "${BOLD}${YELLOW}🔄 Initializing the database service...${RESET}"
+    echo "${BOLD}${BLUE}🔄 Initializing the database service...${RESET}"
     cd "$project_dir" || exit
     $COMPOSE_CMD up -d --remove-orphans --build
 
     trap '$COMPOSE_CMD down --volumes --remove-orphans > /dev/null 2>&1' EXIT
-    echo "${BOLD}${YELLOW}🔄 Running migrations...${RESET}"
+    echo "${BOLD}${BLUE}🔄 Running migrations...${RESET}"
     $COMPOSE_CMD run --rm --remove-orphans --no-deps \
     -e "AUTORUN_ENABLED=true" \
     -e "AUTORUN_LARAVEL_CONFIG_CACHE=false" \
@@ -144,52 +672,6 @@ initialize_database_service() {
     true
 
     echo "✅ Migrations completed successfully!${RESET}"
-}
-
-install_node_dependencies() {
-    local reinstall
-
-    if [[ ! -d "$project_dir" ]]; then
-        echo "Error: Project directory '$project_dir' does not exist." >&2
-        return 1
-    fi
-
-    # if [[ -d "$project_dir/node_modules" ]]; then
-    #     echo "Existing node_modules directory found."
-    #     while true; do
-    #         read -rp "Would you like to reinstall node dependencies with yarn? (y/n) " reinstall
-    #         case $reinstall in
-    #             [Yy]) 
-    #                 echo "Reinstalling node dependencies with yarn..."
-    #                 if ! rm -rf "$project_dir/node_modules"; then
-    #                     echo "Error: Failed to remove existing node_modules directory." >&2
-    #                     return 1
-    #                 fi
-    #                 break
-    #                 ;;
-    #             [Nn]) 
-    #                 echo "Skipping reinstallation."
-    #                 return 0
-    #                 ;;
-    #             *) 
-    #                 echo "Please answer y or n."
-    #                 ;;
-    #         esac
-    #     done
-    # fi
-
-    if ! cd "$project_dir"; then
-        echo "Error: Failed to change to project directory '$project_dir'." >&2
-        return 1
-    fi
-
-    echo "${BOLD}${YELLOW}🔄 Installing Node dependencies with yarn...${RESET}"
-    if ! $COMPOSE_CMD run --no-deps --rm --remove-orphans node yarn install; then
-        echo "${BOLD}${RED}Error: Failed to install node dependencies.${RESET}" >&2
-        return 1
-    fi
-
-    echo "Node dependencies installed successfully."
 }
 
 merge_blocks() {
@@ -223,12 +705,12 @@ merge_blocks() {
             fi
             
             # Get relative paths for Docker volume mounts
-            local rel_block=${block#"$template_src_dir/"}
-            local rel_destination=${destination#$project_dir/}
+            local rel_block="${block#"${template_src_dir}/"}"
+            local rel_destination="${destination#"${project_dir}/"}"
             
             # Merge the block into the destination file, appending values
             docker run --rm \
-                --user "$user_id" \
+                --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" \
                 -v "${template_src_dir}:/src_dir" \
                 -v "${project_dir}:/dest_dir" \
                 "mikefarah/yq:$yq_version" eval-all \
@@ -243,231 +725,6 @@ merge_blocks() {
             echo "$service_name: Copied ${rel_path}"
         fi
     done
-}
-
-process_selections() {
-    echo "Preparing your project..."
-    
-    for selection in sqlite mysql mariadb postgresql redis horizon queues reverb schedule github_actions; do
-        case "$selection" in
-            sqlite)
-                [[ $sqlite ]] && setup_sqlite
-                ;;
-            mysql)
-                [[ $mysql ]] && setup_mysql
-                ;;
-            mariadb)
-                [[ $mariadb ]] && setup_mariadb
-                ;;
-            postgresql)
-                [[ $postgresql ]] && setup_postgresql
-                ;;
-            redis)
-                [[ $redis ]] && setup_redis
-                ;;
-            horizon)
-                [[ $horizon ]] && setup_horizon
-                ;;
-            queues)
-                [[ $queues ]] && setup_queues
-                ;;
-            reverb)
-                [[ $reverb ]] && setup_reverb
-                ;;
-            schedule)
-                [[ $schedule ]] && setup_schedule
-                ;;
-            github_actions)
-                [[ $use_github_actions ]] && setup_github_actions
-                ;;
-        esac
-    done
-    
-    echo "Service set up complete!"
-}
-
-set_colors() {
-    if [[ -t 1 ]]; then
-        RAINBOW="
-            $(printf '\033[38;5;196m')
-            $(printf '\033[38;5;202m')
-            $(printf '\033[38;5;226m')
-            $(printf '\033[38;5;082m')
-            "
-        RED=$(printf '\033[31m')
-        GREEN=$(printf '\033[32m')
-        YELLOW=$(printf '\033[33m')
-        BLUE=$(printf '\033[34m')
-        BOLD=$(printf '\033[1m')
-        RESET=$(printf '\033[m')
-    else
-        RAINBOW=""
-        RED=""
-        GREEN=""
-        YELLOW=""
-        BLUE=""
-        BOLD=""
-        RESET=""
-    fi
-}
-
-setup_github_actions() {
-    local service_name="github-actions"
-    merge_blocks "$service_name"
-}
-
-setup_horizon() {
-    local service_name="horizon"
-    local current_dir=$(pwd)
-
-    cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
-
-    echo "$service_name: Installing Horizon dependencies..."
-    $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php composer --verbose --working-dir=/var/www/html/ require laravel/horizon
-    $COMPOSE_CMD run --rm --remove-orphans --no-deps php php artisan horizon:install
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "QUEUE_CONNECTION" "QUEUE_CONNECTION=redis"
-
-    cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
-
-    merge_blocks "$service_name"
-    
-}
-
-setup_mariadb() {
-    docker_compose_database_migration="true"
-    local service_name="mariadb"
-
-    merge_blocks "$service_name"
-
-    echo "$service_name: Updating the Laravel .env and .env.example files..."
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_HOST" "DB_HOST=mariadb"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PORT" "DB_PORT=3306"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "DB_DATABASE=laravel"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_USERNAME" "DB_USERNAME=root"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "DB_PASSWORD=rootpassword"
-}
-
-setup_mysql() {
-    docker_compose_database_migration="true"
-    local service_name="mysql"
-
-    merge_blocks "$service_name"
-
-    echo "$service_name: Updating the Laravel .env and .env.example files..."
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_HOST" "DB_HOST=mysql"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PORT" "DB_PORT=3306"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "DB_DATABASE=laravel"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_USERNAME" "DB_USERNAME=root"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "DB_PASSWORD=rootpassword"
-}
-
-setup_postgresql() {
-    docker_compose_database_migration="true"
-    local service_name="postgres"
-
-    merge_blocks "$service_name"
-
-    echo "$service_name: Updating the Laravel .env and .env.example files..."
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=pgsql"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_HOST" "DB_HOST=postgres"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PORT" "DB_PORT=5432"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "DB_DATABASE=laravel"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_USERNAME" "DB_USERNAME=postgres"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "DB_PASSWORD=postgrespassword"
-}
-
-setup_queues() {
-    merge_blocks "queues"
-}
-
-setup_redis() {
-    local service_name="redis"
-
-    merge_blocks "$service_name"
-
-    echo "$service_name: Updating the Laravel .env and .env.example files..."
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "REDIS_HOST" "REDIS_HOST=redis"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "REDIS_PASSWORD" "REDIS_PASSWORD=redispassword"
-}
-
-setup_reverb() {
-    local service_name="reverb"
-    merge_blocks "$service_name"
-
-    cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
-
-    echo "$service_name: Installing and configuring Laravel Reverb..."
-    $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php php artisan install:broadcasting --without-node
-
-    echo "$service_name: Installing Laravel Reverb node dependencies..."
-    $COMPOSE_CMD run --rm --remove-orphans --no-deps node yarn add --dev laravel-echo pusher-js
-    $COMPOSE_CMD run --rm --remove-orphans --no-deps node yarn run build
-
-    echo "$service_name: Preparing env files for Reverb..."
-    line_in_file --action replace --file ".env" "REVERB_HOST" "REVERB_HOST=\"reverb.dev.test\""
-    line_in_file --action replace --file ".env" "REVERB_PORT" "REVERB_PORT=443"
-    line_in_file --action replace --file ".env" "REVERB_SCHEME" "REVERB_SCHEME=https"
-
-    # Update ENV example file only
-    line_in_file --action replace --file ".env.example" "REVERB_APP_ID" "REVERB_APP_ID=999999"
-    line_in_file --action replace --file ".env.example" "REVERB_APP_KEY" "REVERB_APP_KEY=changemeabcde1234567"
-    line_in_file --action replace --file ".env.example" "REVERB_APP_SECRET" "REVERB_APP_SECRET=changeme123456789abcde"
-    line_in_file --action replace --file ".env.example" "REVERB_HOST" "REVERB_HOST=\"reverb.dev.test\""
-    line_in_file --action replace --file ".env.example" "REVERB_PORT" "REVERB_PORT=443"
-    line_in_file --action replace --file ".env.example" "REVERB_SCHEME" "REVERB_SCHEME=https"
-    line_in_file --action replace --file ".env.example" "VITE_REVERB_APP_KEY" "VITE_REVERB_APP_KEY=\"\${REVERB_APP_KEY}\""
-    line_in_file --action replace --file ".env.example" "VITE_REVERB_HOST" "VITE_REVERB_HOST=\"\${REVERB_HOST}\""
-    line_in_file --action replace --file ".env.example" "VITE_REVERB_PORT" "VITE_REVERB_PORT=\"\${REVERB_PORT}\""
-    line_in_file --action replace --file ".env.example" "VITE_REVERB_SCHEME" "VITE_REVERB_SCHEME=\"\${REVERB_SCHEME}\""
-
-    cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
-}
-
-setup_schedule() {
-    merge_blocks "schedule"
-}
-
-setup_sqlite() {
-    local service_name="sqlite"
-    local existing_sqlite_detected=false
-    local init_sqlite=true
-
-    merge_blocks "$service_name"
-
-    # Determine SQLite is being used
-    if grep -q 'DB_CONNECTION=sqlite' "$SPIN_PROJECT_DIRECTORY/.env"; then
-        existing_sqlite_detected=true
-    fi
-
-    if [[ "$SPIN_ACTION" == "init" && "$existing_sqlite_detected" == true ]]; then
-        echo "${BOLD}${YELLOW}[spin-template-laravel] 👉 We detected SQLite being used on this project.${RESET}"
-        echo "${BOLD}${YELLOW}[spin-template-laravel] 👉 We need to update the .env file to use the correct path.${RESET}"
-        echo "${BOLD}${YELLOW}[spin-template-laravel] 🚨 This means you may need to manually move your data to the path for the database.${RESET}"
-        echo ""
-        read -n 1 -r -p "${BOLD}${YELLOW}[spin-template-laravel] 🤔 Would you like us to automatically configure SQLite for you? [Y/n]${RESET} " response
-
-        if [[ $response =~ ^([nN][oO]|[nN])$ ]]; then
-            echo ""
-            echo "${BOLD}${YELLOW}[spin-template-laravel] 🚨 You will need to manually move your SQLite database to the correct path.${RESET}"
-            echo "${BOLD}${YELLOW}[spin-template-laravel] 🚨 The path is: ${RESET}/.infrastructure/volume_data/sqlite/database.sqlite"
-            echo ""
-            init_sqlite=false
-        fi
-    fi
-
-    if [ "$init_sqlite" == true ]; then
-        # Create the SQLite database folder
-        mkdir -p "$project_dir/.infrastructure/volume_data/sqlite"
-
-        echo "$service_name: Updating the Laravel .env and .env.example files..."
-        line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=sqlite"
-        line_in_file --action after --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_DATABASE=/var/www/html/.infrastructure/volume_data/sqlite/database.sqlite"
-
-        # Run the migrations to create the SQLite database
-        docker run --rm -v "$project_dir:/var/www/html" --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" "$SPIN_PHP_DOCKER_IMAGE" php /var/www/html/artisan migrate --force
-    fi
 }
 
 stop_running_containers() {
@@ -504,71 +761,39 @@ stop_running_containers() {
 ###############################################
 
 set_colors
-
-# Feature selection loop
-while true; do
-    display_feature_menu
-    read -s -r -n 1 key
-    case $key in
-        1) 
-            if [[ $horizon ]]; then
-                horizon=""
-                redis=""
-            else
-                horizon="1"
-                redis="1"
-            fi
-            ;;
-        2) [[ $queues ]] && queues="" || queues="1" ;;
-        3) [[ $reverb ]] && reverb="" || reverb="1" ;;
-        4) [[ $schedule ]] && schedule="" || schedule="1" ;;
-        '') break ;;
-    esac
-done
-
-# Database selection loop
-while true; do
-    display_database_menu
-    read -s -n 1 key
-    case $key in
-        1) [[ $sqlite ]] && sqlite="" || sqlite="1" ;;
-        2) [[ $mysql ]] && mysql="" || mysql="1" ;;
-        3) [[ $mariadb ]] && mariadb="" || mariadb="1" ;;
-        4) [[ $postgresql ]] && postgresql="" || postgresql="1" ;;
-        5) 
-            if [[ ! $horizon ]]; then
-                [[ $redis ]] && redis="" || redis="1"
-            fi
-            ;;
-        '') 
-            if [[ $horizon && ! $redis ]]; then
-                echo -e "${RED}Redis is required for Horizon. Redis has been automatically selected.${RESET}"
-                redis="1"
-                read -n 1 -s -r -p "Press any key to continue..."
-            else
-                break
-            fi
-            ;;
-    esac
-done
-
-# GitHub Actions selection loop
-while true; do
-    display_github_actions_menu
-    read -s -r -n 1 key
-    case $key in
-        1) use_github_actions=true ;;
-        2) use_github_actions=false ;;
-        '') break ;;
-    esac
-done
+select_php_extensions
+select_features
+select_javascript_package_manager
+select_database
+select_github_actions
 
 # Clean up the screen before moving forward
 clear
 
+# Set PHP Version of Project
+line_in_file --action replace --file "$project_dir/$php_dockerfile" "FROM serversideup" "FROM serversideup/php:${SPIN_PHP_VERSION}-fpm-nginx-alpine AS base"
+
+# Add PHP Extensions if available
+if [ ${#php_extensions[@]} -gt 0 ]; then
+    add_php_extensions
+fi
+
+# Process the user selections
 process_selections
-configure_vite
-line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "APP_URL" "APP_URL=https://laravel.dev.test"
+
+if [ "$spin_template_type" == "pro" ]; then
+    # Configure Vite
+    if [ -f "$project_dir/vite.config.js" ]; then
+        configure_vite
+    fi
+
+    # Configure APP_URL
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "APP_URL" "APP_URL=https://laravel.dev.test"
+
+    configure_mailpit
+fi
+
+# Configure Let's Encrypt
 prompt_and_update_file \
     --title "🔐 Configure Let's Encrypt" \
     --details "Let's Encrypt requires an email address to send notifications about SSL renewals." \
@@ -577,12 +802,13 @@ prompt_and_update_file \
     --search-default "changeme@example.com" \
     --success-msg "Updated \".infrastructure/conf/traefik/prod/traefik.yml\" with your email."
 
-# Install npm dependencies
 
-install_node_dependencies
+if [[ "$SPIN_INSTALL_DEPENDENCIES" == "true" ]]; then
+    install_node_dependencies
 
-if [[ "$docker_compose_database_migration" == "true" ]]; then
-    initialize_database_service
+    if [[ "$docker_compose_database_migration" == "true" ]]; then
+        initialize_database_service
+    fi
 fi
 
 # Export actions so it's available to the main Spin script

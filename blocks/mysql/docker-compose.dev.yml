@@ -1,4 +1,10 @@
 services:
+
+  php:
+    depends_on:
+      mysql:
+        condition: service_started
+
   mysql:
     networks:
       - development
