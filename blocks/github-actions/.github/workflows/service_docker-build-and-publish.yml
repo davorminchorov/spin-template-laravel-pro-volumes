@@ -46,41 +46,55 @@ jobs:
           php \
           composer install --optimize-autoloader --no-interaction --no-progress --no-ansi
 
-      - name: Set env file
+      - name: Decode and set .env file
         run: |
-          echo $BASE_64_SECRET | base64 -d > .env
+          echo $ENV_FILE_BASE64 | base64 -d > .env
           chmod 600 .env
         env:
-          BASE_64_SECRET: ${{ secrets.ENV_FILE_BASE64 }}
+          ENV_FILE_BASE64: ${{ secrets.ENV_FILE_BASE64 }}
+
+      - name: Determine package manager
+        id: determine-package-manager
+        run: |
+          if [ -f yarn.lock ]; then
+            echo "PACKAGE_MANAGER=yarn" >> $GITHUB_ENV
+            echo "LOCK_FILE=yarn.lock" >> $GITHUB_ENV
+          elif [ -f package-lock.json ]; then
+            echo "PACKAGE_MANAGER=npm" >> $GITHUB_ENV
+            echo "LOCK_FILE=package-lock.json" >> $GITHUB_ENV
+          else
+            echo "No lock file found. Exiting."
+            exit 1
+          fi
 
       - name: Restore node_modules cache (if available)
         id: node-modules-restore
         uses: actions/cache/restore@v4
         with:
           path: node_modules/
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('yarn.lock') }}
+          key: ${{ runner.os }}-node-modules-${{ hashFiles(env.LOCK_FILE) }}
           
       - if: ${{ steps.node-modules-restore.outputs.cache-hit != 'true' }}
-        name: Run "yarn install"
+        name: Install dependencies
         run: |
           $DOCKER_COMPOSE_CMD \
           run \
           node \
-          yarn install --frozen-lockfile
+          ${{ env.PACKAGE_MANAGER }} install
 
-      - name: Run "yarn build"
+      - name: Build node project
         run: |
           $DOCKER_COMPOSE_CMD \
           run \
           node \
-          yarn build
+          ${{ env.PACKAGE_MANAGER }} run build
 
       - if: ${{ steps.node-modules-restore.outputs.cache-hit != 'true' }}
         name: Upload node_modules cache
         uses: actions/cache/save@v4
         with:
           path: node_modules/
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('yarn.lock') }}
+          key: ${{ runner.os }}-node-modules-${{ hashFiles(env.LOCK_FILE) }}
 
       - name: docker-build-action
         uses: serversideup/github-action-docker-build@v5

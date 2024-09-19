@@ -5,8 +5,3 @@ services:
     command: ["php", "/var/www/html/artisan", "--port=8000", "reverb:start"]
     healthcheck:
       disable: true
-    depends_on:
-      php:
-        condition: service_started
-      spin-database:
-        condition: service_healthy

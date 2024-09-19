@@ -1,10 +1,5 @@
 services:
 
-  php:
-    depends_on:
-      mariadb:
-        condition: service_healthy
-
   mariadb:
     image: mariadb:11.4
     healthcheck:

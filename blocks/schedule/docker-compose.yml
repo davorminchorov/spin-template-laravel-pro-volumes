@@ -3,8 +3,3 @@ services:
   schedule:
     entrypoint: ''
     command: ["php", "/var/www/html/artisan", "schedule:work"]
-    depends_on:
-      php:
-        condition: service_started
-      spin-database:
-        condition: service_healthy

@@ -587,7 +587,7 @@ configure_schedule() {
 configure_vite() {
     local file="${project_dir}/vite.config.js"
 
-    echo "${BLUE}Configuring Vite...${RESET}"
+    echo "${BLUE}Updating Vite configuration...${RESET}"
 
     # Check if the file exists
     if [ ! -f "$file" ]; then
@@ -602,41 +602,32 @@ configure_vite() {
 
     # Update or add server configuration using awk
     awk '
-    BEGIN { server_added = 0 }
+    BEGIN { server_added = 0; in_server_block = 0 }
     /^import .* from/ { print; next }
     /^export default defineConfig\({/ {
         print
-        print "    server: {"
-        print "        host: '"'"'0.0.0.0'"'"',"
-        print "        hmr: {"
-        print "            host: '"'"'vite.dev.test'"'"',"
-        print "            clientPort: 443,"
-        print "        },"
-        print "        https: {"
-        print "            key: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'"'"'),"
-        print "            cert: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'"'"'),"
-        print "        },"
-        print "    },"
-        server_added = 1
+        if (!server_added) {
+            print "    server: {"
+            print "        host: '"'"'0.0.0.0'"'"',"
+            print "        hmr: {"
+            print "            host: '"'"'vite.dev.test'"'"',"
+            print "            clientPort: 443,"
+            print "        },"
+            print "        https: {"
+            print "            key: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'"'"'),"
+            print "            cert: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'"'"'),"
+            print "        },"
+            print "    },"
+            server_added = 1
+        }
         next
     }
-    /^});/ && !server_added {
-        print "    server: {"
-        print "        host: '"'"'0.0.0.0'"'"',"
-        print "        hmr: {"
-        print "            host: '"'"'vite.dev.test'"'"',"
-        print "            clientPort: 443,"
-        print "        },"
-        print "        https: {"
-        print "            key: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'"'"'),"
-        print "            cert: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'"'"'),"
-        print "        },"
-        print "    },"
-    }
-    { print }
+    /^    server: {/ { in_server_block = 1; server_added = 1; next }
+    /^    },/ && in_server_block { in_server_block = 0; next }
+    !in_server_block { print }
     ' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
 
-    echo "Vite configuration updated successfully."
+    echo "vite: vite.config.js updated successfully."
 }
 
 initialize_database_service() {
@@ -737,7 +728,7 @@ set_docker_database_dependencies() {
             -v "${project_dir}:/workdir" \
             "mikefarah/yq:$yq_version" eval \
             'del(.services.'"$service_name"'.depends_on.spin-database)' \
-            -i /workdir/docker-compose.yml
+            -i /workdir/docker-compose.dev.yml
     else
         # Update the docker-compose.yml file to include the correct database
         echo "$service_name: Setting the database dependency to $spin_database"
@@ -746,7 +737,7 @@ set_docker_database_dependencies() {
             -v "${project_dir}:/workdir" \
             "mikefarah/yq:$yq_version" eval \
             '.services.'"$service_name"'.depends_on."'"$spin_database"'".condition = "service_healthy" | del(.services.'"$service_name"'.depends_on.spin-database)' \
-            -i /workdir/docker-compose.yml
+            -i /workdir/docker-compose.dev.yml
     fi
 }
 

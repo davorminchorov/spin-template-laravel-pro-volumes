@@ -11,3 +11,8 @@ services:
       - .:/var/www/html/
     networks:
       - development
+    depends_on:
+      php:
+        condition: service_started
+      spin-database:
+        condition: service_healthy
