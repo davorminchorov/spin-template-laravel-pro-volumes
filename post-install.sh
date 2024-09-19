@@ -14,7 +14,7 @@ docker_compose_database_migration="false"
 
 # Initialize the service variables
 horizon=""
-queues=""
+queue=""
 reverb=""
 schedule=""
 sqlite=""
@@ -144,7 +144,7 @@ process_selections() {
         [[ $postgresql ]] && configure_postgresql
         [[ $redis ]] && configure_redis
         [[ $horizon ]] && configure_horizon
-        [[ $queues ]] && configure_queues
+        [[ $queue ]] && configure_queue
         [[ $reverb ]] && configure_reverb
         [[ $use_github_actions ]] && configure_github_actions
     fi
@@ -220,7 +220,7 @@ select_features() {
         if [ "$spin_template_type" = "pro" ]; then
             echo -e "${schedule:+$BOLD$BLUE}1) Task Scheduling${RESET}"
             echo -e "${horizon:+$BOLD$BLUE}2) Horizon${RESET}"
-            echo -e "${queues:+$BOLD$BLUE}3) Queues (without Redis)${RESET}"
+            echo -e "${queue:+$BOLD$BLUE}3) Queues (without Redis)${RESET}"
             echo -e "${reverb:+$BOLD$BLUE}4) Reverb${RESET}"
         else
             echo -e "${DIM}1) Task Scheduling (Pro)${RESET}"
@@ -252,7 +252,7 @@ select_features() {
                 ;;
             3) 
                 if [ "$spin_template_type" = "pro" ]; then
-                    [[ $queues ]] && queues="" || queues="1"
+                    [[ $queue ]] && queue="" || queue="1"
                 fi
                 ;;
             4) 
@@ -523,8 +523,11 @@ configure_postgresql() {
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "DB_PASSWORD=postgrespassword"
 }
 
-configure_queues() {
-    merge_blocks "queues"
+configure_queue() {
+    local service_name="queue"
+    merge_blocks "$service_name"
+    set_docker_database_dependencies "$service_name"
+
 }
 
 configure_redis() {
@@ -544,26 +547,9 @@ configure_reverb() {
     current_dir=$(pwd)
     merge_blocks "$service_name"
 
-    cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
-    # Determine which database is selected
-    if [ "$mysql" = "1" ]; then
-        spin_database="mysql"
-    elif [ "$mariadb" = "1" ]; then
-        spin_database="mariadb"
-    elif [ "$postgresql" = "1" ]; then
-        spin_database="postgres"
-    else
-        spin_database="sqlite"
-    fi
+    set_docker_database_dependencies "$service_name"
 
-    if [ "$spin_database" = "sqlite" ]; then
-        # Remove the spin-database dependency for SQLite
-        line_in_file --action delete --file "docker-compose.yml" 'spin-database:'
-        line_in_file --action delete --file "docker-compose.yml" 'condition: service_healthy'
-    else
-        # Update the docker-compose.yml file to include the correct database
-        line_in_file --action exact --file "docker-compose.yml" "spin-database" "$spin_database"
-    fi
+    cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
 
     echo "$service_name: Installing and configuring Laravel Reverb..."
     $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELLOME_MESSAGE=false" php php artisan install:broadcasting --without-node
@@ -593,7 +579,9 @@ configure_reverb() {
 }
 
 configure_schedule() {
-    merge_blocks "schedule"
+    local service_name="schedule"
+    merge_blocks "$service_name"
+    set_docker_database_dependencies "$service_name"
 }
 
 configure_vite() {
@@ -725,6 +713,41 @@ merge_blocks() {
             echo "$service_name: Copied ${rel_path}"
         fi
     done
+}
+
+set_docker_database_dependencies() {
+    local service_name=$1
+    
+    # Determine which database is selected
+    if [ "$mysql" = "1" ]; then
+        spin_database="mysql"
+    elif [ "$mariadb" = "1" ]; then
+        spin_database="mariadb"
+    elif [ "$postgresql" = "1" ]; then
+        spin_database="postgres"
+    else
+        spin_database="sqlite"
+    fi
+
+    if [ "$spin_database" = "sqlite" ]; then
+        # Remove the database dependency for SQLite
+        echo "$service_name: Removing the database dependency for SQLite"
+        docker run --rm \
+            --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" \
+            -v "${project_dir}:/workdir" \
+            "mikefarah/yq:$yq_version" eval \
+            'del(.services.'"$service_name"'.depends_on.spin-database)' \
+            -i /workdir/docker-compose.yml
+    else
+        # Update the docker-compose.yml file to include the correct database
+        echo "$service_name: Setting the database dependency to $spin_database"
+        docker run --rm \
+            --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" \
+            -v "${project_dir}:/workdir" \
+            "mikefarah/yq:$yq_version" eval \
+            '.services.'"$service_name"'.depends_on."'"$spin_database"'".condition = "service_healthy" | del(.services.'"$service_name"'.depends_on.spin-database)' \
+            -i /workdir/docker-compose.yml
+    fi
 }
 
 stop_running_containers() {

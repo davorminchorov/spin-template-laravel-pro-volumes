@@ -1,8 +1,10 @@
 services:
 
-  schedule:
+  queue:
     entrypoint: ''
-    command: ["php", "/var/www/html/artisan", "schedule:work"]
+    command: ["php", "/var/www/html/artisan", "queue:work", "--tries=3"]
+    healthcheck:
+      disable: true
     depends_on:
       php:
         condition: service_started
