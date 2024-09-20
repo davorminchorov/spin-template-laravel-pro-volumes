@@ -46,6 +46,13 @@ jobs:
           php \
           composer install --optimize-autoloader --no-interaction --no-progress --no-ansi
 
+      - if: ${{ steps.composer-vendor-restore.outputs.cache-hit != 'true' }}
+        name: Upload composer cache
+        uses: actions/cache/save@v4
+        with:
+          path: vendor/
+          key: ${{ runner.os }}-composer-vendor-${{ hashFiles('composer.lock') }}
+
       - name: Decode and set .env file
         run: |
           echo $ENV_FILE_BASE64 | base64 -d > .env
@@ -67,13 +74,17 @@ jobs:
             exit 1
           fi
 
+      - name: Set cache key
+        id: set-cache-key
+        run: echo "CACHE_KEY=${{ runner.os }}-node-modules-${{ hashFiles(env.LOCK_FILE) }}" >> $GITHUB_OUTPUT
+
       - name: Restore node_modules cache (if available)
         id: node-modules-restore
         uses: actions/cache/restore@v4
         with:
           path: node_modules/
-          key: ${{ runner.os }}-node-modules-${{ hashFiles(env.LOCK_FILE) }}
-          
+          key: ${{ steps.set-cache-key.outputs.CACHE_KEY }}
+
       - if: ${{ steps.node-modules-restore.outputs.cache-hit != 'true' }}
         name: Install dependencies
         run: |
@@ -94,7 +105,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: node_modules/
-          key: ${{ runner.os }}-node-modules-${{ hashFiles(env.LOCK_FILE) }}
+          key: ${{ steps.set-cache-key.outputs.CACHE_KEY }}
 
       - name: docker-build-action
         uses: serversideup/github-action-docker-build@v5

@@ -42,6 +42,7 @@ jobs:
           md5_file_path: "./.infrastructure/conf/traefik/prod/traefik.yml"
           md5_variable_name: "SPIN_MD5_HASH_TRAEFIK_YML"
           env_file_base64: "${{ secrets.ENV_FILE_BASE64 }}"
+          ssh_remote_known_hosts: "${{ secrets.SSH_REMOTE_KNOWN_HOSTS }}"
         env:
           SPIN_IMAGE_DOCKERFILE_PHP: "ghcr.io/${{ github.repository }}:${{ github.sha }}"
           SPIN_DEPLOYMENT_ENVIRONMENT: production
