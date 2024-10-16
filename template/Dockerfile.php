@@ -44,7 +44,8 @@ FROM base AS ci
 # so we set the ROOT user and configure
 # the PHP-FPM pool to run as www-data
 USER root
-RUN echo "user = www-data" >> /usr/local/etc/php-fpm.d/docker-php-serversideup-pool.conf && \
+RUN echo "" >> /usr/local/etc/php-fpm.d/docker-php-serversideup-pool.conf && \ 
+    echo "user = www-data" >> /usr/local/etc/php-fpm.d/docker-php-serversideup-pool.conf && \
     echo "group = www-data" >> /usr/local/etc/php-fpm.d/docker-php-serversideup-pool.conf
 
 ############################################
@@ -56,8 +57,5 @@ COPY --chown=www-data:www-data . /var/www/html
 # Create the SQLite directory and set the owner to www-data (remove this if you're not using SQLite)
 RUN mkdir -p /var/www/html/.infrastructure/volume_data/sqlite/ && \
     chown -R www-data:www-data /var/www/html/.infrastructure/volume_data/sqlite/
-
-# Ensure PHP-FPM gracefully stops
-STOPSIGNAL SIGQUIT
 
 USER www-data

@@ -1,12 +1,8 @@
 services:
 
   horizon:
-    entrypoint: ''
     command: ["php", "/var/www/html/artisan", "horizon"]
+    stop_signal: SIGTERM
     healthcheck:
-      test: ["CMD", "php", "/var/www/html/artisan", "horizon:status"]
-      interval: 1m30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-      start_interval: 5s
+      test: ["CMD", "healthcheck-horizon"]
+      start_period: 10s

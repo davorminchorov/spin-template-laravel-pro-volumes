@@ -1,5 +1,8 @@
 services:
 
   schedule:
-    entrypoint: ''
     command: ["php", "/var/www/html/artisan", "schedule:work"]
+    stop_signal: SIGTERM
+    healthcheck:
+      test: ["CMD", "healthcheck-schedule"]
+      start_period: 10s

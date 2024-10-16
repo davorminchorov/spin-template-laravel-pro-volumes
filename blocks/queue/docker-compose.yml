@@ -1,7 +1,8 @@
 services:
 
   queue:
-    entrypoint: ''
     command: ["php", "/var/www/html/artisan", "queue:work", "--tries=3"]
+    stop_signal: SIGTERM
     healthcheck:
-      disable: true
+      test: ["CMD", "healthcheck-queue"]
+      start_period: 10s

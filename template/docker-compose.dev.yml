@@ -25,6 +25,7 @@ services:
         USER_ID: ${SPIN_USER_ID}
         GROUP_ID: ${SPIN_GROUP_ID}
       dockerfile: Dockerfile.php
+    stop_signal: SIGTERM
     volumes:
       - .:/var/www/html/
     networks:

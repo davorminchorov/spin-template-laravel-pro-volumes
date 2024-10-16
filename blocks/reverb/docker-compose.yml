@@ -1,7 +1,8 @@
 services:
 
   reverb:
-    entrypoint: ''
     command: ["php", "/var/www/html/artisan", "--port=8000", "reverb:start"]
+    stop_signal: SIGTERM
     healthcheck:
-      disable: true
+      test: ["CMD", "healthcheck-reverb"]
+      start_period: 10s
