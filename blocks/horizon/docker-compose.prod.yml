@@ -2,6 +2,8 @@ services:
 
   horizon:
     image: ${SPIN_IMAGE_DOCKERFILE_PHP}
+    environment:
+      APP_ENV: "${SPIN_DEPLOYMENT_ENVIRONMENT}"
     stop_grace_period: 30s
     networks:
       - web-public

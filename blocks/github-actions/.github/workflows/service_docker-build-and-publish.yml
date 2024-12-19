@@ -13,6 +13,10 @@ on:
       target:
         type: string
         default: ''
+      environment:
+        type: string
+        required: true
+
 env:
   DOCKER_COMPOSE_CMD: docker compose -f docker-compose.yml -f docker-compose.ci.yml
 jobs:
@@ -53,12 +57,24 @@ jobs:
           path: vendor/
           key: ${{ runner.os }}-composer-vendor-${{ hashFiles('composer.lock') }}
 
-      - name: Decode and set .env file
+      - name: Set uppercase environment name
+        id: env-name
+        run: echo "upper_env=${ENVIRONMENT^^}" >> $GITHUB_OUTPUT
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+
+      - name: Validate and set environment file
         run: |
+          SECRET_NAME="${{ steps.env-name.outputs.upper_env }}_ENV_FILE_BASE64"
+          if [ -z "$ENV_FILE_BASE64" ]; then
+            echo "::error::Required secret '$SECRET_NAME' is not set. Please add this secret to your repository. If you previously used 'ENV_FILE_BASE64', be sure to rename it to '$SECRET_NAME'."
+            exit 1
+          fi
+          
           echo $ENV_FILE_BASE64 | base64 -d > .env
           chmod 600 .env
         env:
-          ENV_FILE_BASE64: ${{ secrets.ENV_FILE_BASE64 }}
+          ENV_FILE_BASE64: ${{ secrets[format('{0}_ENV_FILE_BASE64', steps.env-name.outputs.upper_env)] }}
 
       - name: Determine package manager
         id: determine-package-manager

@@ -2,6 +2,8 @@ services:
 
   queue:
     image: ${SPIN_IMAGE_DOCKERFILE_PHP}
+    environment:
+      APP_ENV: "${SPIN_DEPLOYMENT_ENVIRONMENT}"
     networks:
       - web-public
     volumes:

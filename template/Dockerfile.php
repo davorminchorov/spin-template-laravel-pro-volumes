@@ -4,7 +4,7 @@
 
 # Learn more about the Server Side Up PHP Docker Images at:
 # https://serversideup.net/open-source/docker-php/
-FROM serversideup/php:8.3-fpm-nginx-alpine AS base
+FROM serversideup/php:8.4-fpm-nginx-alpine AS base
 
 ## Uncomment if you need to install additional PHP extensions
 # USER root
@@ -25,7 +25,7 @@ ARG GROUP_ID
 USER root
 
 # Trust the self-signed certificate
-COPY .infrastructure/conf/traefik/dev/certificates/ssu-ca.pem /usr/local/share/ca-certificates/ssu-ca.crt
+COPY .infrastructure/conf/traefik/dev/certificates/local-ca.pem /usr/local/share/ca-certificates/local-ca.crt
 RUN update-ca-certificates
 
 # Set the user ID and group ID for www-data

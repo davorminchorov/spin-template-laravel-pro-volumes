@@ -19,18 +19,14 @@ services:
     # We use an SSH image so we can securely tunnel into the Docker network with 
     # tools like Sequel Pro, TablePlus, Sequel Ace, etc.
     # Learn more how to secure your tunnel here: https://github.com/serversideup/docker-ssh
-    image: serversideup/docker-ssh:v2.0.0
+    image: serversideup/docker-ssh:v3
     ports:
       - target: 2222
         published: 2222
         mode: host
     environment:
-      # Change the keys below to your own keys 
-      AUTHORIZED_KEYS: >
-        "# Start Keys
-         ssh-ed25519 1234567890abcdefghijklmnoqrstuvwxyz user-a
-         ssh-ed25519 abcdefghijklmnoqrstuvwxyz1234567890 user-b
-         # End Keys"
+      # Be sure to set the authorized keys in the .env file or GitHub Actions secrets
+      AUTHORIZED_KEYS: "${AUTHORIZED_KEYS}"
       # You can lock to a specific IP too (AllowUsers tunnel@1.2.3.4)
       ALLOWED_IPS: "AllowUsers tunnel"
     volumes:
