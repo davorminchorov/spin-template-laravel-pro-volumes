@@ -7,10 +7,12 @@ SPIN_PHP_DOCKER_IMAGE="${SPIN_PHP_DOCKER_IMAGE:-serversideup/php:${SPIN_PHP_VERS
 
 # Set project variables
 spin_template_type="pro"
-javascript_package_manager="yarn"
-project_dir=${SPIN_PROJECT_DIRECTORY:-"$(pwd)/template"}
-php_dockerfile="Dockerfile.php"
+spin_database="sqlite"
 docker_compose_database_migration="false"
+javascript_package_manager="yarn"
+php_dockerfile="Dockerfile.php"
+project_dir=${SPIN_PROJECT_DIRECTORY:-"$(pwd)/template"}
+template_src_dir=${SPIN_TEMPLATE_TEMPORARY_SRC_DIR:-"$(pwd)"}
 
 # Initialize the service variables
 horizon=""
@@ -23,14 +25,6 @@ mariadb=""
 postgresql=""
 redis=""
 use_github_actions=""
-
-###############################################
-# Pro - Variables
-###############################################
-template_src_dir=${SPIN_TEMPLATE_TEMPORARY_SRC_DIR:-"$(pwd)"}
-
-# Set dependency versions
-yq_version="4.44.2"
 
 ###############################################
 # Functions
@@ -60,10 +54,6 @@ configure_sqlite() {
     local init_sqlite=true
     local laravel_default_sqlite_database_path="$project_dir/database/database.sqlite"
     local spin_sqlite_database_path="$project_dir/.infrastructure/volume_data/sqlite/database.sqlite"
-
-    if [ "$spin_template_type" == "pro" ]; then
-        merge_blocks "$service_name"
-    fi
 
     if [[ "$SPIN_ACTION" == "init" ]] && grep -q 'DB_CONNECTION=sqlite' "$SPIN_PROJECT_DIRECTORY/.env"; then
         echo "${BOLD}${RED}⚠️  WARNING ⚠️${RESET}"
@@ -188,20 +178,29 @@ select_database() {
 
         read -s -n 1 key
         case $key in
-            1) [[ $sqlite ]] && sqlite="" || sqlite="1" ;;
+            1) 
+                if [[ $sqlite ]]; then
+                    sqlite=""
+                else
+                    sqlite="1"
+                fi
+                ;;
             2) 
                 if [ "$spin_template_type" = "pro" ]; then
                     [[ $mysql ]] && mysql="" || mysql="1"
+                    docker_compose_database_migration="true"
                 fi
                 ;;
             3) 
                 if [ "$spin_template_type" = "pro" ]; then
                     [[ $mariadb ]] && mariadb="" || mariadb="1"
+                    docker_compose_database_migration="true"
                 fi
                 ;;
             4) 
                 if [ "$spin_template_type" = "pro" ]; then
                     [[ $postgresql ]] && postgresql="" || postgresql="1"
+                    docker_compose_database_migration="true"
                 fi
                 ;;
             5) 
@@ -402,6 +401,33 @@ select_php_extensions() {
     done
 }
 
+select_auto_migrations() {
+    while true; do
+        clear
+        echo "${BOLD}${YELLOW}Would you like to automatically run migrations?${RESET}"
+        if [ "$docker_compose_database_migration" = "true" ] || [ -z "$docker_compose_database_migration" ]; then
+            echo -e "${BOLD}${BLUE}1) Yes, run migrations on container start${RESET}"
+            echo "2) No, I'll run migrations manually"
+        else
+            echo "1) Yes, run migrations on container start"
+            echo -e "${BOLD}${BLUE}2) No, I'll run migrations manually${RESET}"
+        fi
+        echo "Press a number to select."
+        echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue."
+
+        read -s -n 1 key
+        case $key in
+            1) docker_compose_database_migration="true" ;;
+            2) docker_compose_database_migration="false" ;;
+            '') break ;;
+        esac
+    done
+
+    if [ "$docker_compose_database_migration" = "false" ]; then
+        add_user_todo_item "You need to run \"spin run php artisan migrate\" manually to run migrations."
+    fi
+}
+
 set_colors() {
     if [[ -t 1 ]]; then
         RAINBOW="
@@ -490,13 +516,12 @@ configure_mailpit() {
 }
 
 configure_mariadb() {
-    docker_compose_database_migration="true"
     local service_name="mariadb"
 
     merge_blocks "$service_name"
 
     echo "$service_name: Updating the Laravel .env and .env.example files..."
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mariadb"
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_HOST" "DB_HOST=mariadb"
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PORT" "DB_PORT=3306"
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "DB_DATABASE=laravel"
@@ -505,7 +530,6 @@ configure_mariadb() {
 }
 
 configure_mysql() {
-    docker_compose_database_migration="true"
     local service_name="mysql"
 
     merge_blocks "$service_name"
@@ -520,7 +544,6 @@ configure_mysql() {
 }
 
 configure_postgresql() {
-    docker_compose_database_migration="true"
     local service_name="postgres"
 
     merge_blocks "$service_name"
@@ -641,6 +664,16 @@ configure_vite() {
     echo "vite: vite.config.js updated successfully."
 }
 
+docker_yq() {
+    local yq_version="4.44.2"
+    docker run --rm \
+        --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" \
+        -v "${project_dir}:/workdir" \
+        -v "${template_src_dir}:/src" \
+        "mikefarah/yq:$yq_version" \
+        "$@"
+}
+
 initialize_database_service() {
     stop_running_containers
 
@@ -656,6 +689,7 @@ initialize_database_service() {
     -e "AUTORUN_LARAVEL_EVENT_CACHE=false" \
     -e "AUTORUN_LARAVEL_ROUTE_CACHE=false" \
     -e "AUTORUN_LARAVEL_VIEW_CACHE=false" \
+    -e "AUTORUN_LARAVEL_MIGRATION_TIMEOUT=90" \
     -e "SHOW_WELCOME_MESSAGE=false" \
     -e "S6_VERBOSITY=0" \
     php \
@@ -699,13 +733,9 @@ merge_blocks() {
             local rel_destination="${destination#"${project_dir}/"}"
             
             # Merge the block into the destination file, appending values
-            docker run --rm \
-                --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" \
-                -v "${template_src_dir}:/src_dir" \
-                -v "${project_dir}:/dest_dir" \
-                "mikefarah/yq:$yq_version" eval-all \
+            docker_yq eval-all \
                 'select(fileIndex == 0) * select(fileIndex == 1)' \
-                "/dest_dir/$rel_destination" "/src_dir/$rel_block" \
+                "/workdir/$rel_destination" "/src/$rel_block" \
                 -i
             
             echo "$service_name: Updated ${rel_path}"
@@ -718,8 +748,7 @@ merge_blocks() {
 }
 
 set_docker_database_dependencies() {
-    local service_name=$1
-    
+    local service_name=$1    
     # Determine which database is selected
     if [ "$mysql" = "1" ]; then
         spin_database="mysql"
@@ -734,19 +763,17 @@ set_docker_database_dependencies() {
     if [ "$spin_database" = "sqlite" ]; then
         # Remove the database dependency for SQLite
         echo "$service_name: Removing the database dependency for SQLite"
-        docker run --rm \
-            --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" \
-            -v "${project_dir}:/workdir" \
-            "mikefarah/yq:$yq_version" eval \
+        docker_yq eval \
             'del(.services.'"$service_name"'.depends_on.spin-database)' \
             -i /workdir/docker-compose.dev.yml
     else
+        # Remove default references to SQLite
+        echo "$service_name: Remove default references to SQLite"
+        line_in_file --action delete --file "$project_dir/docker-compose.prod.yml" "database_sqlite"
+
         # Update the docker-compose.yml file to include the correct database
         echo "$service_name: Setting the database dependency to $spin_database"
-        docker run --rm \
-            --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" \
-            -v "${project_dir}:/workdir" \
-            "mikefarah/yq:$yq_version" eval \
+        docker_yq eval \
             '.services.'"$service_name"'.depends_on."'"$spin_database"'".condition = "service_healthy" | del(.services.'"$service_name"'.depends_on.spin-database)' \
             -i /workdir/docker-compose.dev.yml
     fi
@@ -790,6 +817,10 @@ select_php_extensions
 select_features
 select_javascript_package_manager
 select_database
+if [ "$docker_compose_database_migration" = "true" ] && [ "$spin_template_type" == "pro" ]; then
+    select_auto_migrations
+    line_in_file --action after --file "$project_dir/docker-compose.prod.yml" "      AUTORUN_ENABLED: \"true\"" "      AUTORUN_LARAVEL_MIGRATION: \"false\""
+fi
 select_github_actions
 
 # Clean up the screen before moving forward
