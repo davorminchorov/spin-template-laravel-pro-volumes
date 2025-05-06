@@ -22,7 +22,7 @@ This is a template for Spin Pro that includes Laravel, Redis, Reverb, Queues, an
 ### 🚀 Quick Start
 You can create a new Laravel project with Redis, Reverb, Queues, and more in less than a minute.
 
-Once you have [your computer prepared to run Spin](https://getspin.pro/docs/getting-started/preparing-your-computer), you can create a new project by running the following command:
+Once you have your computer prepared to run Spin, you can create a new project by running the following command:
 
 ```shell
 spin new laravel-pro
