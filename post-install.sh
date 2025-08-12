@@ -22,6 +22,7 @@ schedule=""
 sqlite=""
 mysql=""
 mariadb=""
+meilisearch=""
 postgresql=""
 redis=""
 use_github_actions=""
@@ -139,11 +140,13 @@ process_selections() {
     [[ $sqlite ]] && configure_sqlite
     
     if [ "$spin_template_type" = "pro" ]; then
+        sleep 0.5  # Small delay before processing service configurations
         [[ $schedule ]] && configure_schedule
         [[ $mysql ]] && configure_mysql
         [[ $mariadb ]] && configure_mariadb
         [[ $postgresql ]] && configure_postgresql
         [[ $redis ]] && configure_redis
+        [[ $meilisearch ]] && configure_meilisearch
         [[ $horizon ]] && configure_horizon
         [[ $queue ]] && configure_queue
         [[ $reverb ]] && configure_reverb
@@ -232,11 +235,13 @@ select_features() {
             echo -e "${horizon:+$BOLD$BLUE}2) Horizon${RESET}"
             echo -e "${queue:+$BOLD$BLUE}3) Queues (without Redis)${RESET}"
             echo -e "${reverb:+$BOLD$BLUE}4) Reverb${RESET}"
+            echo -e "${meilisearch:+$BOLD$BLUE}5) Meilisearch${RESET}"
         else
             echo -e "${DIM}1) Task Scheduling (Pro)${RESET}"
             echo -e "${DIM}2) Horizon (Pro)${RESET}"
             echo -e "${DIM}3) Queues (Pro)${RESET}"
             echo -e "${DIM}4) Reverb (Pro)${RESET}"
+            echo -e "${DIM}5) Meilisearch (Pro)${RESET}"
         fi
         show_spin_pro_notice
         echo "Press a number to select/deselect."
@@ -268,6 +273,11 @@ select_features() {
             4) 
                 if [ "$spin_template_type" = "pro" ]; then
                     [[ $reverb ]] && reverb="" || reverb="1"
+                fi
+                ;;
+            5) 
+                if [ "$spin_template_type" = "pro" ]; then
+                    [[ $meilisearch ]] && meilisearch="" || meilisearch="1"
                 fi
                 ;;
             '') break ;;
@@ -482,7 +492,7 @@ configure_horizon() {
     if [[ "$SPIN_ACTION" == "new" ]]; then
         echo "$service_name: Installing Horizon dependencies..."
         $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php composer --verbose --working-dir=/var/www/html/ require laravel/horizon
-        $COMPOSE_CMD run --rm --remove-orphans --no-deps php php artisan horizon:install
+        $COMPOSE_CMD run --rm --remove-orphans --no-deps -e "SHOW_WELCOME_MESSAGE=false" php php artisan horizon:install
     fi
 
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "QUEUE_CONNECTION" "QUEUE_CONNECTION=redis"
@@ -527,6 +537,27 @@ configure_mariadb() {
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "DB_DATABASE=laravel"
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_USERNAME" "DB_USERNAME=root"
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "DB_PASSWORD=rootpassword"
+}
+
+configure_meilisearch() {
+    local service_name="meilisearch"
+    merge_blocks "$service_name"
+    set_docker_database_dependencies "$service_name"
+
+    cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
+
+    echo "$service_name: Updating the Laravel .env and .env.example files..."
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "SCOUT_DRIVER" "SCOUT_DRIVER=meilisearch"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "MEILISEARCH_HOST" "MEILISEARCH_HOST=http://meilisearch:7700"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "MEILISEARCH_KEY" "MEILISEARCH_KEY=developmentkey1234567890"
+
+    echo "$service_name: Installing and configuring Meilisearch..."
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php composer --verbose --working-dir=/var/www/html/ require laravel/scout meilisearch/meilisearch-php http-interop/http-factory-guzzle
+
+    echo "$service_name: Publishing Meilisearch configuration..."
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php artisan vendor:publish --provider="Laravel\Scout\ScoutServiceProvider"
+
+    cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
 }
 
 configure_mysql() {
@@ -586,7 +617,7 @@ configure_reverb() {
     cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
 
     echo "$service_name: Installing and configuring Laravel Reverb..."
-    $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELLOME_MESSAGE=false" php php artisan install:broadcasting --without-node
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php php artisan install:broadcasting --reverb --no-interaction --without-node
 
     echo "$service_name: Installing Laravel Reverb node dependencies..."
     $COMPOSE_CMD run --rm --remove-orphans --no-deps node ${javascript_package_manager} add --dev laravel-echo pusher-js
@@ -780,10 +811,12 @@ set_docker_database_dependencies() {
 }
 
 stop_running_containers() {
+    echo "Checking for running containers..."    
+    
+    # Get current running containers
     local running_containers
     running_containers=$(docker ps -q)
-
-    echo "Checking for running containers..."    
+    
     if [[ -n "$running_containers" ]]; then
         clear
         echo "${BOLD}${YELLOW}The following containers are currently running:${RESET}"
@@ -797,10 +830,11 @@ stop_running_containers() {
         
         if [[ $answer =~ ^[Yy]$ ]]; then
             echo "Stopping all running containers..."
-            if ! docker stop "$running_containers"; then
-                echo "Error: Failed to stop some or all containers."
-                return 1
-            fi
+            # Stop each container individually and ignore errors for non-existent containers
+            for container in $running_containers; do
+                docker stop "$container" 2>/dev/null || true
+            done
+            return 0
         else
             echo "Exiting. Please stop the containers manually before proceeding."
             return 1
@@ -819,7 +853,7 @@ select_javascript_package_manager
 select_database
 if [ "$docker_compose_database_migration" = "true" ] && [ "$spin_template_type" == "pro" ]; then
     select_auto_migrations
-    line_in_file --action after --file "$project_dir/docker-compose.prod.yml" "      AUTORUN_ENABLED: \"true\"" "      AUTORUN_LARAVEL_MIGRATION: \"false\""
+    line_in_file --action after --file "$project_dir/docker-compose.prod.yml" "      AUTORUN_ENABLED: \"true\"" "      AUTORUN_LARAVEL_MIGRATION: \"true\""
 fi
 select_github_actions
 
@@ -840,7 +874,7 @@ if [[ "$SPIN_INSTALL_DEPENDENCIES" == "true" ]]; then
 
     if [[ "$SPIN_ACTION" == "init" ]]; then
         echo "Re-installing composer dependencies..."
-        docker compose run --rm --build \
+        docker compose run --rm --no-deps --build \
             -e COMPOSER_CACHE_DIR=/dev/null \
             -e "SHOW_WELCOME_MESSAGE=false" \
             php \

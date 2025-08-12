@@ -1,0 +1,4 @@
+services:
+  meilisearch:
+    environment:
+      MEILI_MASTER_KEY: "developmentkey1234567890"

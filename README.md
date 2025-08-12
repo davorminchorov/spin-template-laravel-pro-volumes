@@ -13,11 +13,13 @@ This is a template for Spin Pro that includes Laravel, Redis, Reverb, Queues, an
 > 127.0.0.1 mailpit.dev.test
 > 127.0.0.1 vite.dev.test
 > 127.0.0.1 reverb.dev.test
+> 127.0.0.1 meilisearch.dev.test
 > ```
 - **Laravel**: [https://laravel.dev.test](https://laravel.dev.test)
 - **Mailpit**: [https://mailpit.dev.test](https://mailpit.dev.test)
 - **Vite**: [https://vite.dev.test](https://vite.dev.test)
 - **Reverb**: [wss://reverb.dev.test](wss://reverb.dev.test)
+- **Meilisearch**: [http://meilisearch.dev.test](http://meilisearch.dev.test)
 
 ### 🚀 Quick Start
 You can create a new Laravel project with Redis, Reverb, Queues, and more in less than a minute.
