@@ -673,7 +673,12 @@ configure_vite() {
         print
         if (!server_added) {
             print "    server: {"
+            print "        origin: '"'"'*'"'"',"
             print "        host: '"'"'0.0.0.0'"'"',"
+            print "        cors: {"
+            print "            origin: '"'"'*'"'"',
+            print "            methods: ['"'"'GET'"'"', '"'"'POST'"'"', '"'"'OPTIONS'"'"'], // Specify allowed methods"
+            print "        },"
             print "        hmr: {"
             print "            host: '"'"'vite.dev.test'"'"',"
             print "            clientPort: 443,"
