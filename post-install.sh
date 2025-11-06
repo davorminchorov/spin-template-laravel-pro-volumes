@@ -9,7 +9,6 @@ SPIN_PHP_DOCKER_BASE_IMAGE="${SPIN_PHP_DOCKER_BASE_IMAGE:-serversideup/php:${SPI
 # Set project variables
 spin_template_type="pro"
 spin_database="sqlite"
-docker_compose_database_migration="false"
 javascript_package_manager="yarn"
 php_dockerfile="Dockerfile.php"
 project_dir=${SPIN_PROJECT_DIRECTORY:-"$(pwd)/template"}
@@ -192,19 +191,16 @@ select_database() {
             2) 
                 if [ "$spin_template_type" = "pro" ]; then
                     [[ $mysql ]] && mysql="" || mysql="1"
-                    docker_compose_database_migration="true"
                 fi
                 ;;
             3) 
                 if [ "$spin_template_type" = "pro" ]; then
                     [[ $mariadb ]] && mariadb="" || mariadb="1"
-                    docker_compose_database_migration="true"
                 fi
                 ;;
             4) 
                 if [ "$spin_template_type" = "pro" ]; then
                     [[ $postgresql ]] && postgresql="" || postgresql="1"
-                    docker_compose_database_migration="true"
                 fi
                 ;;
             5) 
@@ -410,33 +406,6 @@ select_php_extensions() {
             break
         fi
     done
-}
-
-select_auto_migrations() {
-    while true; do
-        clear
-        echo "${BOLD}${YELLOW}Would you like to automatically run migrations?${RESET}"
-        if [ "$docker_compose_database_migration" = "true" ] || [ -z "$docker_compose_database_migration" ]; then
-            echo -e "${BOLD}${BLUE}1) Yes, run migrations on container start${RESET}"
-            echo "2) No, I'll run migrations manually"
-        else
-            echo "1) Yes, run migrations on container start"
-            echo -e "${BOLD}${BLUE}2) No, I'll run migrations manually${RESET}"
-        fi
-        echo "Press a number to select."
-        echo "Press ${BOLD}${BLUE}ENTER${RESET} to continue."
-
-        read -s -n 1 key
-        case $key in
-            1) docker_compose_database_migration="true" ;;
-            2) docker_compose_database_migration="false" ;;
-            '') break ;;
-        esac
-    done
-
-    if [ "$docker_compose_database_migration" = "false" ]; then
-        add_user_todo_item "You need to run \"spin run php artisan migrate\" manually to run migrations."
-    fi
 }
 
 set_colors() {
@@ -852,10 +821,6 @@ select_php_extensions
 select_features
 select_javascript_package_manager
 select_database
-if [ "$docker_compose_database_migration" = "true" ] && [ "$spin_template_type" == "pro" ]; then
-    select_auto_migrations
-    line_in_file --action after --file "$project_dir/docker-compose.prod.yml" "      AUTORUN_ENABLED: \"true\"" "      AUTORUN_LARAVEL_MIGRATION: \"true\""
-fi
 select_github_actions
 
 # Clean up the screen before moving forward
@@ -920,10 +885,7 @@ line_in_file --action exact --ignore-missing --file "$project_dir/.spin.yml" "ch
 
 if [[ "$SPIN_INSTALL_DEPENDENCIES" == "true" ]]; then
     install_node_dependencies
-
-    if [[ "$docker_compose_database_migration" == "true" ]]; then
-        initialize_database_service
-    fi
+    initialize_database_service
 fi
 
 if [[ ! -d "$project_dir/.git" ]]; then
