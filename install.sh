@@ -106,11 +106,22 @@ prompt_php_version() {
     if [ "$SPIN_ACTION" == "new" ]; then
         php_versions=("8.4" "8.3" "8.2")
     fi
+    
+    # Filter PHP versions based on variation requirements
+    if [[ "$SPIN_PHP_VARIATION" == "frankenphp" ]]; then
+        php_versions=("8.4" "8.3")
+    fi
 
     while true; do
         clear
         show_header
         echo "${BOLD}${YELLOW}👉 What PHP version would you like to use?${RESET}"
+        
+        # Show variation-specific note if applicable
+        if [[ "$SPIN_PHP_VARIATION" == "frankenphp" ]]; then
+            echo "${DIM}Note: FrankenPHP requires PHP 8.3 or higher${RESET}"
+        fi
+        echo ""
         
         for i in "${!php_versions[@]}"; do
             local version="${php_versions[$i]}"
@@ -338,8 +349,8 @@ init(){
 # Main: Where we call the functions
 ###############################################
 
-prompt_php_version
 prompt_php_variation
+prompt_php_version
 prompt_php_os
 assemble_php_docker_image
 
