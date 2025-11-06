@@ -148,7 +148,7 @@ prompt_php_variation() {
     local variations=("fpm-nginx" "frankenphp" "fpm-apache")
     local variation_descriptions=(
         "PHP-FPM + NGINX (Traditional, widely adopted)"
-        "FrankenPHP (Modern, worker mode, HTTP/2 & HTTP/3)"
+        "FrankenPHP (Laravel Octane, worker mode, HTTP/2 & HTTP/3)"
         "PHP-FPM + Apache (Ideal for WordPress, .htaccess support)"
     )
     local variation_choice
@@ -166,7 +166,7 @@ prompt_php_variation() {
             local variation="${variations[$i]}"
             local description="${variation_descriptions[$i]}"
             local display="$((i+1))) $variation"
-            [[ "$variation" == "${variations[0]}" ]] && display+=" ${DIM}(Recommended)${RESET}"
+            [[ "$variation" == "${variations[0]}" ]] && display+=" ${DIM}${RESET}"
             
             if [[ "$SPIN_PHP_VARIATION" == "$variation" ]]; then
                 echo -e "${BOLD}${BLUE}$display${RESET}"
@@ -222,7 +222,7 @@ prompt_php_os() {
             local os="${os_options[$i]}"
             local description="${os_descriptions[$i]}"
             local display="$((i+1))) $os"
-            [[ "$os" == "${os_options[0]}" ]] && display+=" ${DIM}(Recommended)${RESET}"
+            [[ "$os" == "${os_options[0]}" ]] && display+=" ${DIM}${RESET}"
             
             if [[ "$SPIN_PHP_OS" == "$os" ]]; then
                 echo -e "${BOLD}${BLUE}$display${RESET}"
