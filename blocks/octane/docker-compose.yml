@@ -1,0 +1,6 @@
+services:
+  php:
+    command: ["php", "artisan", "octane:start", "--server=frankenphp", "--port=8080"]
+    healthcheck:
+      test: ["CMD", "healthcheck-octane"]
+      start_period: 10s

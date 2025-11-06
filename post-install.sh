@@ -3,6 +3,7 @@
 # Capture Spin Variables
 SPIN_ACTION=${SPIN_ACTION:-"install"}
 SPIN_PHP_VERSION="${SPIN_PHP_VERSION:-8.4}"
+SPIN_PHP_VARIATION="${SPIN_PHP_VARIATION:-fpm-nginx}"
 SPIN_PHP_DOCKER_INSTALLER_IMAGE="${SPIN_PHP_DOCKER_INSTALLER_IMAGE:-serversideup/php:${SPIN_PHP_VERSION}-cli}"
 SPIN_PHP_DOCKER_BASE_IMAGE="${SPIN_PHP_DOCKER_BASE_IMAGE:-serversideup/php:${SPIN_PHP_VERSION}-fpm-nginx-alpine}"
 
@@ -25,6 +26,7 @@ mariadb=""
 meilisearch=""
 postgresql=""
 redis=""
+octane=""
 use_github_actions=""
 
 ###############################################
@@ -150,6 +152,7 @@ process_selections() {
         [[ $horizon ]] && configure_horizon
         [[ $queue ]] && configure_queue
         [[ $reverb ]] && configure_reverb
+        [[ $octane ]] && configure_octane
         [[ $use_github_actions ]] && configure_github_actions
     fi
     echo "Services configured."
@@ -233,12 +236,20 @@ select_features() {
             echo -e "${queue:+$BOLD$BLUE}3) Queues (without Redis)${RESET}"
             echo -e "${reverb:+$BOLD$BLUE}4) Reverb${RESET}"
             echo -e "${meilisearch:+$BOLD$BLUE}5) Meilisearch${RESET}"
+            
+            # Octane - only available with FrankenPHP
+            if [[ "$SPIN_PHP_VARIATION" == "frankenphp" ]]; then
+                echo -e "${octane:+$BOLD$BLUE}6) Laravel Octane${RESET}"
+            else
+                echo -e "${DIM}6) Laravel Octane (Requires FrankenPHP)${RESET}"
+            fi
         else
             echo -e "${DIM}1) Task Scheduling (Pro)${RESET}"
             echo -e "${DIM}2) Horizon (Pro)${RESET}"
             echo -e "${DIM}3) Queues (Pro)${RESET}"
             echo -e "${DIM}4) Reverb (Pro)${RESET}"
             echo -e "${DIM}5) Meilisearch (Pro)${RESET}"
+            echo -e "${DIM}6) Laravel Octane (Pro)${RESET}"
         fi
         show_spin_pro_notice
         echo "Press a number to select/deselect."
@@ -275,6 +286,22 @@ select_features() {
             5) 
                 if [ "$spin_template_type" = "pro" ]; then
                     [[ $meilisearch ]] && meilisearch="" || meilisearch="1"
+                fi
+                ;;
+            6) 
+                if [ "$spin_template_type" = "pro" ]; then
+                    if [[ "$SPIN_PHP_VARIATION" == "frankenphp" ]]; then
+                        [[ $octane ]] && octane="" || octane="1"
+                    else
+                        # Show a helpful message if FrankenPHP is not selected
+                        clear
+                        echo "${BOLD}${RED}⚠️  FrankenPHP Required${RESET}"
+                        echo ""
+                        echo "Laravel Octane requires FrankenPHP to be selected as your web server."
+                        echo "FrankenPHP was introduced in the first prompt of this setup."
+                        echo ""
+                        read -n 1 -s -r -p "${BOLD}${YELLOW}Press any key to continue...${RESET}"
+                    fi
                 fi
                 ;;
             '') break ;;
@@ -609,6 +636,42 @@ configure_reverb() {
     line_in_file --action replace --file ".env.example" "VITE_REVERB_HOST" "VITE_REVERB_HOST=\"\${REVERB_HOST}\""
     line_in_file --action replace --file ".env.example" "VITE_REVERB_PORT" "VITE_REVERB_PORT=\"\${REVERB_PORT}\""
     line_in_file --action replace --file ".env.example" "VITE_REVERB_SCHEME" "VITE_REVERB_SCHEME=\"\${REVERB_SCHEME}\""
+
+    cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
+}
+
+configure_octane() {
+    local service_name="octane"
+    local current_dir=""
+
+    current_dir=$(pwd)
+
+    merge_blocks "$service_name"
+
+    cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
+
+    echo "$service_name: Installing and configuring Laravel Octane with FrankenPHP..."
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php composer require laravel/octane
+
+    echo "$service_name: Configuring Traefik for Laravel Octane..."
+    line_in_file --action exact \
+        --file "${project_dir}/docker-compose.dev.yml" \
+        --file "${project_dir}/docker-compose.prod.yml" \
+        "laravel-web.loadbalancer.server.scheme=https" \
+        "laravel-web.loadbalancer.server.scheme=http"
+
+    line_in_file --action exact \
+        --file "${project_dir}/docker-compose.dev.yml" \
+        --file "${project_dir}/docker-compose.prod.yml" \
+        "laravel-web.loadbalancer.server.port=8443" \
+        "laravel-web.loadbalancer.server.port=8080"
+
+    line_in_file --action exact \
+        --file "${project_dir}/docker-compose.prod.yml" \
+        "laravel-web.loadbalancer.healthcheck.scheme=https" \
+        "laravel-web.loadbalancer.healthcheck.scheme=http"
+
+    echo "$service_name: Laravel Octane configuration completed."
 
     cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
 }
