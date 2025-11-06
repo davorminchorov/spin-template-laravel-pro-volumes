@@ -3,7 +3,8 @@
 # Capture Spin Variables
 SPIN_ACTION=${SPIN_ACTION:-"install"}
 SPIN_PHP_VERSION="${SPIN_PHP_VERSION:-8.4}"
-SPIN_PHP_DOCKER_IMAGE="${SPIN_PHP_DOCKER_IMAGE:-serversideup/php:${SPIN_PHP_VERSION}-cli}"
+SPIN_PHP_DOCKER_INSTALLER_IMAGE="${SPIN_PHP_DOCKER_INSTALLER_IMAGE:-serversideup/php:${SPIN_PHP_VERSION}-cli}"
+SPIN_PHP_DOCKER_BASE_IMAGE="${SPIN_PHP_DOCKER_BASE_IMAGE:-serversideup/php:${SPIN_PHP_VERSION}-fpm-nginx-alpine}"
 
 # Set project variables
 spin_template_type="pro"
@@ -96,7 +97,7 @@ configure_sqlite() {
                 --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" \
                 -e COMPOSER_CACHE_DIR=/dev/null \
                 -e "SHOW_WELCOME_MESSAGE=false" \
-                "$SPIN_PHP_DOCKER_IMAGE" \
+                "$SPIN_PHP_DOCKER_INSTALLER_IMAGE" \
                 php /var/www/html/artisan migrate --force
         else
             echo "SQLite database already exists in the correct location. Skipping migration."
@@ -861,7 +862,7 @@ select_github_actions
 clear
 
 # Set PHP Version of Project
-line_in_file --action replace --file "$project_dir/$php_dockerfile" "FROM serversideup" "FROM serversideup/php:${SPIN_PHP_VERSION}-fpm-nginx-alpine AS base"
+line_in_file --action replace --file "$project_dir/$php_dockerfile" "FROM serversideup" "FROM ${SPIN_PHP_DOCKER_BASE_IMAGE} AS base"
 
 # Add PHP Extensions if available
 if [ ${#php_extensions[@]} -gt 0 ]; then
@@ -870,7 +871,7 @@ fi
 
 # Install Composer dependencies
 if [[ "$SPIN_INSTALL_DEPENDENCIES" == "true" ]]; then
-    docker pull "$SPIN_PHP_DOCKER_IMAGE"
+    docker pull "$SPIN_PHP_DOCKER_INSTALLER_IMAGE"
 
     if [[ "$SPIN_ACTION" == "init" ]]; then
         echo "Re-installing composer dependencies..."
@@ -893,7 +894,7 @@ if [[ "$SPIN_INSTALL_DEPENDENCIES" == "true" ]]; then
             --user "${SPIN_USER_ID}:${SPIN_GROUP_ID}" \
             -e COMPOSER_CACHE_DIR=/dev/null \
             -e "SHOW_WELCOME_MESSAGE=false" \
-            "$SPIN_PHP_DOCKER_IMAGE" \
+            "$SPIN_PHP_DOCKER_INSTALLER_IMAGE" \
             composer require serversideup/spin --dev
     fi
 fi
