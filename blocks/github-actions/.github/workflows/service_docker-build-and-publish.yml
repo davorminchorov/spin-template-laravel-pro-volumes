@@ -124,7 +124,7 @@ jobs:
           key: ${{ steps.set-cache-key.outputs.CACHE_KEY }}
 
       - name: docker-build-action
-        uses: serversideup/github-action-docker-build@main
+        uses: serversideup/github-action-docker-build@v6
         with:
           tags: "${{ inputs.docker-tags }}"
           dockerfile: "${{ inputs.dockerfile }}"
