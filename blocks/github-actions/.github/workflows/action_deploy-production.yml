@@ -1,9 +1,3 @@
-###########################################################################
-# 🚨 WARNING: You must set secrets in GitHub Actions in order for this
-# workflow to work. Learn more on our guide:
-# https://getspin.pro/docs/guide/automating-deployments-with-github-actions
-###########################################################################
-
 name: Production Deployment
 on:
   push:

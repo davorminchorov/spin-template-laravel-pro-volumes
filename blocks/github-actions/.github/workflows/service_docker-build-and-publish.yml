@@ -124,11 +124,11 @@ jobs:
           key: ${{ steps.set-cache-key.outputs.CACHE_KEY }}
 
       - name: docker-build-action
-        uses: serversideup/github-action-docker-build@v5
+        uses: serversideup/github-action-docker-build@main
         with:
           tags: "${{ inputs.docker-tags }}"
           dockerfile: "${{ inputs.dockerfile }}"
           registry: "ghcr.io"
           registry-username: "${{ github.actor }}"
-          registry-token: "${{ secrets.GITHUB_TOKEN }}"
+          registry-password: "${{ secrets.GITHUB_TOKEN }}"
           platforms: "${{ inputs.platforms }}"
