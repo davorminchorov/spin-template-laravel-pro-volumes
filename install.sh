@@ -8,7 +8,7 @@ set -e # Exit on error
 laravel_framework_args=("$@")
 
 # Default PHP Docker Image
-SPIN_PHP_VERSION="${SPIN_PHP_VERSION:-8.4}"
+SPIN_PHP_VERSION="${SPIN_PHP_VERSION:-8.5}"
 SPIN_PHP_DOCKER_INSTALLER_IMAGE="${SPIN_PHP_DOCKER_INSTALLER_IMAGE:-serversideup/php:${SPIN_PHP_VERSION}-cli}"
 SPIN_PHP_DOCKER_BASE_IMAGE="${SPIN_PHP_DOCKER_BASE_IMAGE:-serversideup/php:${SPIN_PHP_VERSION}-fpm-nginx-alpine}"
 SPIN_PHP_DOCKER_IMAGE_PREFIX="${SPIN_PHP_DOCKER_IMAGE_PREFIX:-}"
@@ -99,17 +99,17 @@ project_files_exist() {
 }
 
 prompt_php_version() {
-    local php_versions=("8.4" "8.3" "8.2" "8.1" "8.0" "7.4")
+    local php_versions=("8.5" "8.4" "8.3" "8.2" "8.1" "8.0" "7.4")
     local php_choice
 
     # If SPIN_ACTION is "new", filter out versions below 8.2
     if [ "$SPIN_ACTION" == "new" ]; then
-        php_versions=("8.4" "8.3" "8.2")
+        php_versions=("8.5" "8.4" "8.3" "8.2")
     fi
     
     # Filter PHP versions based on variation requirements
     if [[ "$SPIN_PHP_VARIATION" == "frankenphp" ]]; then
-        php_versions=("8.4" "8.3")
+        php_versions=("8.5" "8.4" "8.3")
     fi
 
     while true; do
