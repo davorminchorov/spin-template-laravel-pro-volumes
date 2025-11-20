@@ -9,7 +9,7 @@ services:
     networks:
       - development
     volumes:
-      - ./.infrastructure/volume_data/postgres/database_data/:/var/lib/postgresql/data
+      - ./.infrastructure/volume_data/postgres/database_data/:/var/lib/postgresql
     environment:
         POSTGRES_DB: "laravel"
         POSTGRES_USER: "postgres"

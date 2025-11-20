@@ -12,7 +12,7 @@ services:
         constraints:
           - node.role==manager
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
       - postgres_shared:/shared
 
   ssh:
