@@ -953,7 +953,9 @@ line_in_file --action exact --ignore-missing --file "$project_dir/.spin.yml" "ch
 
 if [[ "$SPIN_INSTALL_DEPENDENCIES" == "true" ]]; then
     install_node_dependencies
-    initialize_database_service
+    if [[ "$spin_template_type" == "pro" ]]; then
+        initialize_database_service
+    fi
 fi
 
 if [[ ! -d "$project_dir/.git" ]]; then
