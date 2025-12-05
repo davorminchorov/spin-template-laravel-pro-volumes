@@ -12,6 +12,7 @@ SPIN_PHP_VERSION="${SPIN_PHP_VERSION:-8.5}"
 SPIN_PHP_DOCKER_INSTALLER_IMAGE="${SPIN_PHP_DOCKER_INSTALLER_IMAGE:-serversideup/php:${SPIN_PHP_VERSION}-cli}"
 SPIN_PHP_DOCKER_BASE_IMAGE="${SPIN_PHP_DOCKER_BASE_IMAGE:-serversideup/php:${SPIN_PHP_VERSION}-fpm-nginx-alpine}"
 SPIN_PHP_DOCKER_IMAGE_PREFIX="${SPIN_PHP_DOCKER_IMAGE_PREFIX:-}"
+LARAVEL_VERSION="${LARAVEL_VERSION:-"laravel/laravel"}"
 
 # Set project files
 declare -a spin_project_files=(
@@ -317,7 +318,7 @@ new(){
     -e COMPOSER_CACHE_DIR=/dev/null \
     -e "SHOW_WELCOME_MESSAGE=false" \
     "$SPIN_PHP_DOCKER_INSTALLER_IMAGE" \
-    composer --no-cache create-project laravel/laravel "${laravel_framework_args[@]}"
+    composer --no-cache create-project "$LARAVEL_VERSION" "${laravel_framework_args[@]}"
 
   init --force
 }
