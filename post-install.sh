@@ -52,6 +52,12 @@ add_php_extensions() {
     echo "Custom PHP extensions added."
 }
 
+configure_javascript_package_manager() {
+    if [ $javascript_package_manager != "yarn" ]; then
+        line_in_file --action exact --file "$project_dir/docker-compose.dev.yml" "yarn run dev" "$javascript_package_manager run dev"
+    fi
+}
+
 configure_sqlite() {
     local service_name="sqlite"
     local init_sqlite=true
@@ -140,7 +146,7 @@ install_node_dependencies() {
 
 process_selections() { 
     [[ $sqlite ]] && configure_sqlite
-    
+    [[ $javascript_package_manager ]] && configure_javascript_package_manager
     if [ "$spin_template_type" = "pro" ]; then
         sleep 0.5  # Small delay before processing service configurations
         [[ $schedule ]] && configure_schedule

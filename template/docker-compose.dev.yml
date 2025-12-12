@@ -48,6 +48,7 @@ services:
         USER_ID: ${SPIN_USER_ID}
         GROUP_ID: ${SPIN_GROUP_ID}
       dockerfile: Dockerfile.node
+    command: yarn run dev
     volumes:
       - .:/usr/src/app/
     working_dir: /usr/src/app/
