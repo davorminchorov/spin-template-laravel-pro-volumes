@@ -721,11 +721,6 @@ configure_vite() {
             print "            key: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev-key.pem'"'"'),"
             print "            cert: fs.readFileSync('"'"'/usr/src/app/.infrastructure/conf/traefik/dev/certificates/local-dev.pem'"'"'),"
             print "        },"
-            print "        origin: '"'"'*'"'"',"
-            print "        cors: {"
-            print "            origin: '"'"'*'"'"',"
-            print "            methods: ['"'"'GET'"'"', '"'"'POST'"'"', '"'"'OPTIONS'"'"'],"
-            print "        },"
             print "    },"
             server_added = 1
         }
