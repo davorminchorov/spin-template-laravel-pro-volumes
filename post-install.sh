@@ -544,6 +544,9 @@ configure_mariadb() {
 
 configure_meilisearch() {
     local service_name="meilisearch"
+    local current_dir=""
+    current_dir=$(pwd)
+
     merge_blocks "$service_name"
     set_docker_database_dependencies "$service_name"
 
