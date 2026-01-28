@@ -224,6 +224,13 @@ prompt_php_os() {
     # Set default if not already set
     [[ -z "$SPIN_PHP_OS" ]] && SPIN_PHP_OS="debian"
 
+    # Apache only supports Debian - skip the prompt
+    if [[ "$SPIN_PHP_VARIATION" == "fpm-apache" ]]; then
+        SPIN_PHP_OS="debian"
+        export SPIN_PHP_OS
+        return
+    fi
+
     while true; do
         clear
         show_header
