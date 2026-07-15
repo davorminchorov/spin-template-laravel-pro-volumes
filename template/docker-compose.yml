@@ -1,7 +1,7 @@
 services:
 
   traefik:
-    image: traefik:v3.6
+    image: traefik:v3.7
     healthcheck:
       test: ["CMD", "traefik", "healthcheck"]
       interval: 10s
