@@ -19,6 +19,7 @@ on:
 
 env:
   DOCKER_COMPOSE_CMD: docker compose -f docker-compose.yml -f docker-compose.ci.yml
+  DOCKER_COMPOSE_RUN_FLAGS: --rm --remove-orphans
 jobs:
   docker-publish:
     runs-on: ubuntu-24.04
@@ -38,7 +39,7 @@ jobs:
         continue-on-error: true
         run: |
           $DOCKER_COMPOSE_CMD \
-          run \
+          run $DOCKER_COMPOSE_RUN_FLAGS \
           php \
           composer show --locked
 
@@ -46,7 +47,7 @@ jobs:
         name: Install Composer dependencies
         run: |
           $DOCKER_COMPOSE_CMD \
-          run \
+          run $DOCKER_COMPOSE_RUN_FLAGS \
           php \
           composer install --optimize-autoloader --no-interaction --no-progress --no-ansi
 
@@ -105,14 +106,14 @@ jobs:
         name: Install dependencies
         run: |
           $DOCKER_COMPOSE_CMD \
-          run \
+          run $DOCKER_COMPOSE_RUN_FLAGS \
           node \
           ${{ env.PACKAGE_MANAGER }} install
 
       - name: Build node project
         run: |
           $DOCKER_COMPOSE_CMD \
-          run \
+          run $DOCKER_COMPOSE_RUN_FLAGS \
           node \
           ${{ env.PACKAGE_MANAGER }} run build
 
@@ -123,10 +124,16 @@ jobs:
           path: node_modules/
           key: ${{ steps.set-cache-key.outputs.CACHE_KEY }}
 
+      - name: Set lowercase Docker tags
+        id: docker-tags
+        run: echo "lower_tags=${DOCKER_TAGS,,}" >> $GITHUB_OUTPUT
+        env:
+          DOCKER_TAGS: ${{ inputs.docker-tags }}
+
       - name: docker-build-action
         uses: serversideup/github-action-docker-build@v6
         with:
-          tags: "${{ inputs.docker-tags }}"
+          tags: "${{ steps.docker-tags.outputs.lower_tags }}"
           dockerfile: "${{ inputs.dockerfile }}"
           registry: "ghcr.io"
           registry-username: "${{ github.actor }}"
