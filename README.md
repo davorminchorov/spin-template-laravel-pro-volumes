@@ -2,7 +2,7 @@
 		<a href="https://getspin.pro"><img src=".github/images/header.png" width="1200" alt="Spin Header" /></a>
 </p>
 
-# 🏆 Spin Pro - Laravel Template (named volumes)
+# 🏆 Spin Pro - Laravel Stack Template
 This is a fork of the official [Spin Pro Laravel template](https://github.com/serversideup/spin-template-laravel-pro). It includes Laravel, Redis, Reverb, Queues, and more. Spin Pro is a local development environment that makes it easy to create and manage your projects. Spin Pro is built on top of Docker Compose and Docker Swarm, making it easy to manage your application from development to production.
 
 ## 🔀 What is different from the official template
@@ -117,19 +117,19 @@ You can create a new Laravel project with Redis, Reverb, Queues, and more in les
 Once you have your computer prepared to run Spin, you can create a new project by running the following command:
 
 ```shell
-spin new davorminchorov/spin-template-laravel-pro-volumes
+spin new davorminchorov/spin-template-laravel-stack
 ```
 
 To add it to an existing Laravel project instead:
 
 ```shell
-spin init davorminchorov/spin-template-laravel-pro-volumes
+spin init davorminchorov/spin-template-laravel-stack
 ```
 
 To use a local checkout of this repository without pushing it anywhere:
 
 ```shell
-spin new --local ~/Code/GitHub/spin-template-laravel-pro-volumes my-project
+spin new --local ~/Code/GitHub/spin-template-laravel-stack my-project
 ```
 
 The official Spin Pro documentation applies to this template as well:
@@ -141,7 +141,7 @@ The official Spin Pro documentation applies to this template as well:
 - **[Docs](https://getspin.pro/docs)** for a deep-dive on how to use the product.
 - **[Discord](https://serversideup.net/discord)** for friendly support from the community and the team.
 - **[Official template on GitHub](https://github.com/serversideup/spin-template-laravel-pro)** for the upstream source code.
-- **[This template on GitHub](https://github.com/davorminchorov/spin-template-laravel-pro-volumes)** for the named-volumes fork.
+- **[This template on GitHub](https://github.com/davorminchorov/spin-template-laravel-stack)** for the named-volumes fork.
 - **[Get Professional Help](https://serversideup.net/professional-support)** - If you need video + screen-sharing support, we offer that too.
 
 ## ❤️ Contributing
