@@ -11,6 +11,12 @@ services:
       - .:/var/www/html/
     networks:
       - development
+    extra_hosts:
+      - "laravel.dev.test:host-gateway"
+      - "reverb.dev.test:host-gateway"
+      - "meilisearch.dev.test:host-gateway"
+      - "typesense-api.dev.test:host-gateway"
+      - "s3.dev.test:host-gateway"
     depends_on:
       php:
         condition: service_started

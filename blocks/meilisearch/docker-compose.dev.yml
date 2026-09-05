@@ -5,11 +5,13 @@ services:
       - meilisearch_data:/meili_data
     networks:
       - development
+      - spin-proxy
     depends_on:
       spin-database:
         condition: service_healthy
     labels:
         - "traefik.enable=true"
+        - "traefik.docker.network=spin-proxy"
         - "traefik.http.routers.meilisearch.rule=Host(`meilisearch.dev.test`)"
         - "traefik.http.routers.meilisearch.entrypoints=websecure"
         - "traefik.http.routers.meilisearch.tls=true"

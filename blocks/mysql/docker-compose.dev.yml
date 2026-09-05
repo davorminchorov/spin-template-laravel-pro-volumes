@@ -10,6 +10,7 @@ services:
       - development
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./.infrastructure/conf/mysql/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh:ro
     environment:
         MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
         MYSQL_DATABASE: ${DB_DATABASE:-laravel}
@@ -17,7 +18,7 @@ services:
         MYSQL_PASSWORD: ${DB_PASSWORD:-laravel}
     ports:
       - target: 3306
-        published: 3306
+        published: ${DB_FORWARD_PORT:-3306} # Host port, derived per project by post-install.sh
         mode: host
 
 volumes:

@@ -3,6 +3,6 @@ title: Laravel Pro Template (named volumes)
 authors:
   - Davor Minchorov (@davorminchorov)
   - Based on the Laravel Pro template by Jay Rogers (@jaydrogers) and Dan Pastori (@danpastori)
-description: The Spin Pro Laravel template with database, Redis and Meilisearch data stored in named Docker volumes instead of the project folder.
+description: The Spin Pro Laravel template with named Docker volumes, a shared Traefik proxy so every project runs at once, mkcert certificates, project-based names, Valkey, Typesense and MinIO.
 repository: https://github.com/davorminchorov/spin-template-laravel-pro-volumes
 issues: https://github.com/davorminchorov/spin-template-laravel-pro-volumes/issues

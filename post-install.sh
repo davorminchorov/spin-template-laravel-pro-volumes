@@ -29,6 +29,8 @@ meilisearch=""
 postgresql=""
 redis="1"
 octane=""
+typesense=""
+minio=""
 use_github_actions=""
 
 # Laravel Octane is pre-selected when FrankenPHP was chosen in install.sh
@@ -45,6 +47,8 @@ spin_project_slug=$(echo "$spin_project_name" | tr '[:upper:]' '[:lower:]' | sed
 spin_project_key=$(echo "$spin_project_slug" | tr -d '-')
 [[ -z "$spin_project_slug" ]] && spin_project_slug="laravel"
 [[ -z "$spin_project_key" ]] && spin_project_key="laravel"
+# Host port for the database, derived from the project name so projects can run side by side (10000-59999)
+spin_project_db_port=$(( 10000 + $(printf '%s' "$spin_project_slug" | cksum | cut -d' ' -f1) % 50000 ))
 
 ###############################################
 # Functions
@@ -136,6 +140,8 @@ initialize_git_repository() {
     cd "$project_dir" || exit
     echo "Initializing Git repository..."
     git init
+    git add -A
+    git commit -q -m "Initial commit" || echo "${YELLOW}Could not create the initial commit (is git user.name/user.email configured?).${RESET}"
 
     cd "$current_dir" || exit
 }
@@ -172,6 +178,9 @@ process_selections() {
         [[ $postgresql ]] && configure_postgresql
         [[ $redis ]] && configure_redis
         [[ $meilisearch ]] && configure_meilisearch
+        [[ $typesense ]] && configure_typesense
+        [[ $minio ]] && configure_minio
+        configure_testing_database
         [[ $horizon ]] && configure_horizon
         [[ $queue ]] && configure_queue
         [[ $reverb ]] && configure_reverb
@@ -192,9 +201,9 @@ select_database() {
             echo -e "${mariadb:+$BOLD$BLUE}3) MariaDB${RESET}"
             echo -e "${postgresql:+$BOLD$BLUE}4) PostgreSQL${RESET}"
             if [[ $horizon ]]; then
-                echo -e "${BOLD}${BLUE}5) Redis (Required for Horizon)${RESET}"
+                echo -e "${BOLD}${BLUE}5) Valkey / Redis (Required for Horizon)${RESET}"
             else
-                echo -e "${redis:+$BOLD$BLUE}5) Redis${RESET}"
+                echo -e "${redis:+$BOLD$BLUE}5) Valkey / Redis${RESET}"
             fi
         else
             echo -e "${DIM}2) MySQL (Pro)${RESET}"
@@ -266,6 +275,8 @@ select_features() {
             else
                 echo -e "${DIM}6) Laravel Octane (Requires FrankenPHP)${RESET}"
             fi
+            echo -e "${typesense:+$BOLD$BLUE}7) Typesense${RESET}"
+            echo -e "${minio:+$BOLD$BLUE}8) MinIO (S3-compatible storage)${RESET}"
         else
             echo -e "${DIM}1) Task Scheduling (Pro)${RESET}"
             echo -e "${DIM}2) Horizon (Pro)${RESET}"
@@ -325,6 +336,16 @@ select_features() {
                         echo ""
                         read -n 1 -s -r -p "${BOLD}${YELLOW}Press any key to continue...${RESET}"
                     fi
+                fi
+                ;;
+            7) 
+                if [ "$spin_template_type" = "pro" ]; then
+                    [[ $typesense ]] && typesense="" || typesense="1"
+                fi
+                ;;
+            8) 
+                if [ "$spin_template_type" = "pro" ]; then
+                    [[ $minio ]] && minio="" || minio="1"
                 fi
                 ;;
             '') break ;;
@@ -763,17 +784,25 @@ configure_project_name() {
 
     echo "${BLUE}Applying the project name \"${spin_project_slug}\" to hostnames, network and credentials...${RESET}"
 
-    # Hostnames: laravel.dev.test -> <project>.test, vite.dev.test -> vite.<project>.test, etc.
+    # Hostnames: laravel.dev.test -> <project>.test, <service>.dev.test -> <service>.<project>.test
     for file in "$dev_compose" "$project_dir/.env" "$project_dir/.env.example" "$project_dir/vite.config.js" "$project_dir/vite.config.ts"; do
         [[ -f "$file" ]] || continue
         sed_inplace \
             -e "s/laravel\.dev\.test/${spin_project_slug}.test/g" \
-            -e "s/vite\.dev\.test/vite.${spin_project_slug}.test/g" \
-            -e "s/mailpit\.dev\.test/mailpit.${spin_project_slug}.test/g" \
-            -e "s/reverb\.dev\.test/reverb.${spin_project_slug}.test/g" \
-            -e "s/meilisearch\.dev\.test/meilisearch.${spin_project_slug}.test/g" \
+            -e "s/\([a-z0-9-]*\)\.dev\.test/\1.${spin_project_slug}.test/g" \
             "$file"
     done
+
+    # Traefik router and service names must be unique across projects on the shared proxy
+    sed_inplace -E \
+        -e "s/(routers|services)\.laravel-web\./\1.${spin_project_slug}-web./g" \
+        -e "s/(routers|services)\.laravel-reverb\./\1.${spin_project_slug}-reverb./g" \
+        -e "s/(routers|services)\.(vite|mailpit|meilisearch|typesense-api|typesense|s3|minio)\./\1.${spin_project_slug}-\2./g" \
+        -e "s/routers\.${spin_project_slug}-(s3|minio)\.service=(s3|minio)/routers.${spin_project_slug}-\1.service=${spin_project_slug}-\2/g" \
+        "$dev_compose"
+
+    # Host port for the database so several projects can run at the same time
+    line_in_file --action after --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_PORT" "DB_FORWARD_PORT=${spin_project_db_port}"
 
     # Docker network: "development" -> "<project>" (build targets named "development" are untouched)
     sed_inplace \
@@ -784,7 +813,137 @@ configure_project_name() {
     # Database defaults in the dev compose file: ${DB_DATABASE:-laravel} -> ${DB_DATABASE:-<project>}
     sed_inplace -e "s/:-laravel}/:-${spin_project_key}}/g" "$dev_compose"
 
-    add_user_todo_item "Add to /etc/hosts: 127.0.0.1 ${spin_project_slug}.test mailpit.${spin_project_slug}.test vite.${spin_project_slug}.test reverb.${spin_project_slug}.test meilisearch.${spin_project_slug}.test"
+    # A local resolver for *.test (e.g. dnsmasq via /etc/resolver/test on macOS) makes hosts entries unnecessary
+    if [[ ! -f /etc/resolver/test ]]; then
+        add_user_todo_item "Add to /etc/hosts: 127.0.0.1 ${spin_project_slug}.test mailpit.${spin_project_slug}.test vite.${spin_project_slug}.test reverb.${spin_project_slug}.test meilisearch.${spin_project_slug}.test typesense.${spin_project_slug}.test typesense-api.${spin_project_slug}.test minio.${spin_project_slug}.test s3.${spin_project_slug}.test"
+    fi
+}
+
+configure_boost() {
+    local current_dir=""
+    current_dir=$(pwd)
+
+    if grep -q '"laravel/boost"' "$project_dir/composer.json"; then
+        return 0
+    fi
+
+    cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
+    echo "${BLUE}Installing Laravel Boost...${RESET}"
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php composer --working-dir=/var/www/html/ require laravel/boost --dev
+    cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
+
+    add_user_todo_item "Run \"spin exec php php artisan boost:install\" to set up Laravel Boost (guidelines, skills, MCP)."
+}
+
+configure_minio() {
+    local service_name="minio"
+
+    merge_blocks "$service_name"
+
+    echo "$service_name: Updating the Laravel .env and .env.example files..."
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "AWS_ACCESS_KEY_ID" "AWS_ACCESS_KEY_ID=${spin_project_key}"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "AWS_SECRET_ACCESS_KEY" "AWS_SECRET_ACCESS_KEY=${spin_project_key}secret"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "AWS_BUCKET" "AWS_BUCKET=${spin_project_key}"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "AWS_USE_PATH_STYLE_ENDPOINT" "AWS_USE_PATH_STYLE_ENDPOINT=true"
+    line_in_file --action after --file "$project_dir/.env" --file "$project_dir/.env.example" "AWS_USE_PATH_STYLE_ENDPOINT" "AWS_URL=https://s3.dev.test/${spin_project_key}"
+    line_in_file --action after --file "$project_dir/.env" --file "$project_dir/.env.example" "AWS_USE_PATH_STYLE_ENDPOINT" "AWS_ENDPOINT=http://minio:9000"
+}
+
+configure_typesense() {
+    local service_name="typesense"
+    local current_dir=""
+    current_dir=$(pwd)
+
+    merge_blocks "$service_name"
+    set_docker_database_dependencies "$service_name"
+
+    cd "$project_dir" || { echo "Failed to change to project directory"; return 1; }
+
+    echo "$service_name: Updating the Laravel .env and .env.example files..."
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "SCOUT_DRIVER" "SCOUT_DRIVER=typesense"
+    line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "TYPESENSE_HOST=typesense"
+    line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "TYPESENSE_PORT=8108"
+    line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "TYPESENSE_PROTOCOL=http"
+    line_in_file --file "$project_dir/.env" --file "$project_dir/.env.example" "TYPESENSE_API_KEY=developmentkey1234567890"
+
+    echo "$service_name: Installing Laravel Scout with the Typesense driver..."
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php composer --verbose --working-dir=/var/www/html/ require laravel/scout typesense/typesense-php
+
+    echo "$service_name: Publishing Scout configuration..."
+    $COMPOSE_CMD run --rm --remove-orphans --no-deps -e COMPOSER_CACHE_DIR=/dev/null -e "SHOW_WELCOME_MESSAGE=false" php php artisan vendor:publish --provider="Laravel\Scout\ScoutServiceProvider"
+
+    cd "$current_dir" || { echo "Failed to return to original directory"; return 1; }
+}
+
+configure_testing_database() {
+    local phpunit="$project_dir/phpunit.xml"
+    local connection=""
+    local host=""
+
+    if [ "$mysql" = "1" ]; then
+        connection="mysql"; host="mysql"
+    elif [ "$mariadb" = "1" ]; then
+        connection="mariadb"; host="mariadb"
+    elif [ "$postgresql" = "1" ]; then
+        connection="pgsql"; host="postgres"
+    else
+        return 0
+    fi
+
+    [[ -f "$phpunit" ]] || return 0
+
+    echo "${BLUE}Pointing phpunit.xml at the ${spin_project_key}_test database...${RESET}"
+    awk -v connection="$connection" -v host="$host" -v database="${spin_project_key}_test" '
+        /<env name="DB_CONNECTION" value="sqlite"\/>/ {
+            match($0, /^[ \t]*/); indent = substr($0, 1, RLENGTH)
+            print indent "<env name=\"DB_CONNECTION\" value=\"" connection "\"/>"
+            print indent "<env name=\"DB_HOST\" value=\"" host "\"/>"
+            next
+        }
+        /<env name="DB_DATABASE" value=":memory:"\/>/ {
+            match($0, /^[ \t]*/); indent = substr($0, 1, RLENGTH)
+            print indent "<env name=\"DB_DATABASE\" value=\"" database "\"/>"
+            next
+        }
+        { print }
+    ' "$phpunit" > "${phpunit}.tmp" && mv "${phpunit}.tmp" "$phpunit"
+}
+
+configure_proxy() {
+    local proxy_dir="${SPIN_PROXY_DIR:-$HOME/.spin-proxy}"
+    local file=""
+
+    echo "${BLUE}Setting up the shared development proxy in ${proxy_dir}...${RESET}"
+    mkdir -p "$proxy_dir/certs" "$proxy_dir/dynamic"
+
+    for file in docker-compose.yml traefik.yml; do
+        if [[ ! -f "$proxy_dir/$file" ]]; then
+            cp "$template_src_dir/proxy/$file" "$proxy_dir/$file"
+        fi
+    done
+
+    if command -v mkcert >/dev/null 2>&1; then
+        if [[ ! -f "$(mkcert -CAROOT)/rootCA.pem" ]]; then
+            add_user_todo_item "Run \"mkcert -install\" once so browsers trust the local certificates, then restart the proxy: docker compose -f ${proxy_dir}/docker-compose.yml restart"
+        fi
+
+        if [[ ! -f "$proxy_dir/certs/default.pem" ]]; then
+            echo "proxy: Generating the default certificate (*.test)..."
+            mkcert -cert-file "$proxy_dir/certs/default.pem" -key-file "$proxy_dir/certs/default-key.pem" "*.test" localhost 127.0.0.1 ::1 >/dev/null 2>&1
+            printf 'tls:\n  stores:\n    default:\n      defaultCertificate:\n        certFile: /certs/default.pem\n        keyFile: /certs/default-key.pem\n' > "$proxy_dir/dynamic/default.yml"
+        fi
+
+        if [[ ! -f "$proxy_dir/certs/${spin_project_slug}.pem" ]]; then
+            echo "proxy: Generating the certificate for ${spin_project_slug}.test and *.${spin_project_slug}.test..."
+            mkcert -cert-file "$proxy_dir/certs/${spin_project_slug}.pem" -key-file "$proxy_dir/certs/${spin_project_slug}-key.pem" "${spin_project_slug}.test" "*.${spin_project_slug}.test" >/dev/null 2>&1
+            printf 'tls:\n  certificates:\n    - certFile: /certs/%s.pem\n      keyFile: /certs/%s-key.pem\n' "$spin_project_slug" "$spin_project_slug" > "$proxy_dir/dynamic/${spin_project_slug}.yml"
+        fi
+    else
+        add_user_todo_item "Install mkcert (brew install mkcert && mkcert -install), then run: mkcert -cert-file ${proxy_dir}/certs/${spin_project_slug}.pem -key-file ${proxy_dir}/certs/${spin_project_slug}-key.pem ${spin_project_slug}.test \"*.${spin_project_slug}.test\" and add a matching file in ${proxy_dir}/dynamic/ (see the template README)."
+    fi
+
+    echo "proxy: Starting the shared proxy..."
+    docker compose -f "$proxy_dir/docker-compose.yml" up -d --remove-orphans
 }
 
 docker_yq() {
@@ -948,6 +1107,9 @@ select_github_actions
 # Clean up the screen before moving forward
 clear
 
+# The shared proxy (and its Docker network) must exist before any "docker compose run"
+configure_proxy
+
 # Set PHP Version of Project
 line_in_file --action replace --file "$project_dir/$php_dockerfile" "FROM serversideup" "FROM ${SPIN_PHP_DOCKER_BASE_IMAGE} AS base"
 
@@ -984,6 +1146,8 @@ if [[ "$SPIN_INSTALL_DEPENDENCIES" == "true" ]]; then
             "$SPIN_PHP_DOCKER_INSTALLER_IMAGE" \
             composer require serversideup/spin --dev
     fi
+
+    configure_boost
 fi
 
 # Process the user selections
@@ -1016,6 +1180,21 @@ fi
 if [[ ! -d "$project_dir/.git" ]]; then
     initialize_git_repository
 fi
+
+echo ""
+echo "${BOLD}${GREEN}Project \"${spin_project_slug}\" is configured:${RESET}"
+echo "  App:       https://${spin_project_slug}.test"
+echo "  Mailpit:   https://mailpit.${spin_project_slug}.test"
+echo "  Vite:      https://vite.${spin_project_slug}.test"
+[[ $reverb ]]      && echo "  Reverb:    wss://reverb.${spin_project_slug}.test"
+[[ $meilisearch ]] && echo "  Meilisearch: https://meilisearch.${spin_project_slug}.test"
+[[ $typesense ]]   && echo "  Typesense: https://typesense.${spin_project_slug}.test (API: https://typesense-api.${spin_project_slug}.test)"
+[[ $minio ]]       && echo "  MinIO:     https://minio.${spin_project_slug}.test (S3: https://s3.${spin_project_slug}.test)"
+if [[ $mysql || $mariadb || $postgresql ]]; then
+    echo "  Database:  localhost:${spin_project_db_port} (DB_FORWARD_PORT in .env)"
+fi
+echo "  Proxy dashboard: http://localhost:8080"
+echo ""
 
 # Export actions so it's available to the main Spin script
 export SPIN_USER_TODOS

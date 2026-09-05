@@ -1,0 +1,32 @@
+services:
+
+  minio:
+    volumes:
+      - minio_data:/data
+    networks:
+      - development
+      - spin-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=spin-proxy"
+      # S3 API (what Laravel's s3 disk and browsers use for file URLs)
+      - "traefik.http.routers.s3.rule=Host(`s3.dev.test`)"
+      - "traefik.http.routers.s3.entrypoints=websecure"
+      - "traefik.http.routers.s3.tls=true"
+      - "traefik.http.routers.s3.service=s3"
+      - "traefik.http.services.s3.loadbalancer.server.port=9000"
+      - "traefik.http.services.s3.loadbalancer.server.scheme=http"
+      # Console (web UI)
+      - "traefik.http.routers.minio.rule=Host(`minio.dev.test`)"
+      - "traefik.http.routers.minio.entrypoints=websecure"
+      - "traefik.http.routers.minio.tls=true"
+      - "traefik.http.routers.minio.service=minio"
+      - "traefik.http.services.minio.loadbalancer.server.port=9001"
+      - "traefik.http.services.minio.loadbalancer.server.scheme=http"
+
+  minio-setup:
+    networks:
+      - development
+
+volumes:
+  minio_data:

@@ -1,9 +1,8 @@
 services:
 
-  redis:
-    command: "valkey-server --appendonly yes --requirepass ${REDIS_PASSWORD}"
+  typesense:
     volumes:
-      - redis_data:/data
+      - typesense_data:/data
     networks:
       - web-public
     deploy:
@@ -14,4 +13,4 @@ services:
         order: start-first
 
 volumes:
-  redis_data:
+  typesense_data:

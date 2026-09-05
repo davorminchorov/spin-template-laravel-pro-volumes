@@ -1,7 +1,7 @@
 services:
 
   redis:
-    command: "redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redispassword}"
+    command: "valkey-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redispassword}"
     volumes:
       - redis_data:/data
     networks:

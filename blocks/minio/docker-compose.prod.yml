@@ -1,0 +1,26 @@
+services:
+
+  minio:
+    volumes:
+      - minio_data:/data
+    networks:
+      - web-public
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role==manager
+      update_config:
+        parallelism: 1
+        delay: 5s
+        order: stop-first
+
+  minio-setup:
+    networks:
+      - web-public
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  minio_data:

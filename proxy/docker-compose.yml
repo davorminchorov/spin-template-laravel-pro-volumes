@@ -1,0 +1,36 @@
+# Shared development proxy for every Spin project on this machine.
+#
+# One Traefik instance owns ports 80, 443 and 8080 (dashboard) and routes
+# by hostname to whichever project containers are running. Projects join
+# the external "spin-proxy" network and carry Traefik labels.
+#
+# Installed to ~/.spin-proxy by the template's post-install script.
+# Start it manually with: docker compose -f ~/.spin-proxy/docker-compose.yml up -d
+name: spin-proxy
+
+services:
+  traefik:
+    image: traefik:v3.7
+    container_name: spin-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Traefik dashboard: http://localhost:8080
+    networks:
+      - spin-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./dynamic:/dynamic:ro
+      - ./certs:/certs:ro
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+networks:
+  spin-proxy:
+    name: spin-proxy

@@ -1,9 +1,10 @@
 services:
 
   redis:
-    image: redis:7.4
+    # Valkey is Redis-compatible; the service keeps the "redis" name so REDIS_HOST=redis works
+    image: valkey/valkey:9-alpine
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "valkey-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5

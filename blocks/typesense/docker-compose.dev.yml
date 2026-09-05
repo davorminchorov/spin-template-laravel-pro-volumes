@@ -1,0 +1,39 @@
+services:
+
+  typesense:
+    volumes:
+      - typesense_data:/data
+    networks:
+      - development
+      - spin-proxy
+    depends_on:
+      spin-database:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=spin-proxy"
+      - "traefik.http.routers.typesense-api.rule=Host(`typesense-api.dev.test`)"
+      - "traefik.http.routers.typesense-api.entrypoints=websecure"
+      - "traefik.http.routers.typesense-api.tls=true"
+      - "traefik.http.services.typesense-api.loadbalancer.server.port=8108"
+      - "traefik.http.services.typesense-api.loadbalancer.server.scheme=http"
+
+  typesense-dashboard:
+    # Web UI for browsing collections. On first load, point it at the API URL
+    # https://typesense-api.<project>.test with the TYPESENSE_API_KEY from .env
+    image: bfritscher/typesense-dashboard:latest
+    networks:
+      - spin-proxy
+    depends_on:
+      - typesense
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=spin-proxy"
+      - "traefik.http.routers.typesense.rule=Host(`typesense.dev.test`)"
+      - "traefik.http.routers.typesense.entrypoints=websecure"
+      - "traefik.http.routers.typesense.tls=true"
+      - "traefik.http.services.typesense.loadbalancer.server.port=80"
+      - "traefik.http.services.typesense.loadbalancer.server.scheme=http"
+
+volumes:
+  typesense_data:

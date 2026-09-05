@@ -10,8 +10,13 @@ services:
       - .:/var/www/html/
     networks:
       - development
+      - spin-proxy
+    extra_hosts:
+      - "laravel.dev.test:host-gateway"
+      - "reverb.dev.test:host-gateway"
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=spin-proxy"
       - "traefik.http.routers.laravel-reverb.rule=Host(`reverb.dev.test`)"
       - "traefik.http.routers.laravel-reverb.entrypoints=websecure"
       - "traefik.http.routers.laravel-reverb.tls=true"

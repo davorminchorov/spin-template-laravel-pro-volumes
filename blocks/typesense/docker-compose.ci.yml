@@ -1,0 +1,4 @@
+services:
+  typesense:
+    environment:
+      TYPESENSE_API_KEY: "developmentkey1234567890"

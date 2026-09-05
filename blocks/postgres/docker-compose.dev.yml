@@ -10,13 +10,14 @@ services:
       - development
     volumes:
       - postgres_data:/var/lib/postgresql
+      - ./.infrastructure/conf/postgres/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh:ro
     environment:
         POSTGRES_DB: ${DB_DATABASE:-laravel}
         POSTGRES_USER: ${DB_USERNAME:-laravel}
         POSTGRES_PASSWORD: ${DB_PASSWORD:-laravel}
     ports:
       - target: 5432
-        published: 5432
+        published: ${DB_FORWARD_PORT:-5432} # Host port, derived per project by post-install.sh
         mode: host
 
 volumes:

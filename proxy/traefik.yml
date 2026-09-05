@@ -1,13 +1,16 @@
-# Allow self-signed certificates
+# Allow self-signed certificates on backends (Vite serves HTTPS with Spin's local cert)
 serversTransport:
   insecureSkipVerify: true
 
 providers:
   docker:
     exposedByDefault: false
+    network: spin-proxy
   file:
-      filename: /traefik-certs.yml
-      watch: true
+    # One file per project with its TLS certificate (written by post-install.sh)
+    directory: /dynamic
+    watch: true
+
 entryPoints:
   web:
     address: ":80"

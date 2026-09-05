@@ -1,6 +1,13 @@
 services:
 
   traefik:
+    image: traefik:v3.7
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
     ports:
       - target: 80
         published: 80
@@ -37,6 +44,8 @@ services:
       HEALTHCHECK_PATH: "/up"
     networks:
       - web-public
+    depends_on:
+      - traefik
     volumes:
       - "storage_private:/var/www/html/storage/app/private/"
       - "storage_public:/var/www/html/storage/app/public/"
