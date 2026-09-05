@@ -1,8 +1,8 @@
 ---
-title: Laravel Pro Template
+title: Laravel Pro Template (named volumes)
 authors:
-  - Jay Rogers (@jaydrogers)
-  - Dan Pastori (@danpastori)
-description: A premium Laravel template with Horizon, Redis, Reverb, and more.
-repository: https://github.com/serversideup/spin-template-laravel-pro
-issues: https://github.com/serversideup/spin-template-laravel-pro/issues
+  - Davor Minchorov (@davorminchorov)
+  - Based on the Laravel Pro template by Jay Rogers (@jaydrogers) and Dan Pastori (@danpastori)
+description: The Spin Pro Laravel template with database, Redis and Meilisearch data stored in named Docker volumes instead of the project folder.
+repository: https://github.com/davorminchorov/spin-template-laravel-pro-volumes
+issues: https://github.com/davorminchorov/spin-template-laravel-pro-volumes/issues

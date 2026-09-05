@@ -2,7 +2,7 @@ services:
 
   meilisearch:
     volumes:
-      - ./.infrastructure/volume_data/meilisearch/meilisearch_data:/meili_data
+      - meilisearch_data:/meili_data
     networks:
       - development
     depends_on:
@@ -15,3 +15,6 @@ services:
         - "traefik.http.routers.meilisearch.tls=true"
         - "traefik.http.services.meilisearch.loadbalancer.server.port=7700"
         - "traefik.http.services.meilisearch.loadbalancer.server.scheme=http"
+
+volumes:
+  meilisearch_data:

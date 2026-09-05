@@ -2,8 +2,27 @@
 		<a href="https://getspin.pro"><img src=".github/images/header.png" width="1200" alt="Spin Header" /></a>
 </p>
 
-# 🏆 Spin Pro - Laravel Template
-This is a template for Spin Pro that includes Laravel, Redis, Reverb, Queues, and more. Spin Pro is a local development environment that makes it easy to create and manage your projects. Spin Pro is built on top of Docker Compose and Docker Swarm, making it easy to manage your application from development to production.
+# 🏆 Spin Pro - Laravel Template (named volumes)
+This is a fork of the official [Spin Pro Laravel template](https://github.com/serversideup/spin-template-laravel-pro). It includes Laravel, Redis, Reverb, Queues, and more. Spin Pro is a local development environment that makes it easy to create and manage your projects. Spin Pro is built on top of Docker Compose and Docker Swarm, making it easy to manage your application from development to production.
+
+## 🔀 What is different from the official template
+The official template stores development data for MySQL, MariaDB, PostgreSQL, Redis and Meilisearch as bind mounts under `.infrastructure/volume_data/` inside the project folder.
+
+This template stores that data in named Docker volumes instead, matching how production already works:
+
+| Service     | Official template (dev)                                       | This template (dev)                   |
+|-------------|---------------------------------------------------------------|---------------------------------------|
+| MySQL       | `./.infrastructure/volume_data/mysql/database_data/`          | `mysql_data:/var/lib/mysql`           |
+| MariaDB     | `./.infrastructure/volume_data/mariadb/database_data/`        | `mariadb_data:/var/lib/mysql`         |
+| PostgreSQL  | `./.infrastructure/volume_data/postgres/database_data/`       | `postgres_data:/var/lib/postgresql`   |
+| Redis       | `./.infrastructure/volume_data/redis/data`                    | `redis_data:/data`                    |
+| Meilisearch | `./.infrastructure/volume_data/meilisearch/meilisearch_data`  | `meilisearch_data:/meili_data`        |
+
+SQLite is unchanged. The whole project folder is bind mounted into the `php` container during development, so the SQLite file stays at `.infrastructure/volume_data/sqlite/database.sqlite`.
+
+Named volumes are created per project (Docker Compose prefixes them with the project name) and survive `spin down`. To wipe the data, run `spin down --volumes` or remove the volume with `docker volume rm`.
+
+Everything else (install prompts, blocks, GitHub Actions, production compose files) is identical to the official template, and this repository tracks it as the `upstream` git remote.
 
 ## 🌎 Default Development Environment Config
 > [!CAUTION]
@@ -27,9 +46,22 @@ You can create a new Laravel project with Redis, Reverb, Queues, and more in les
 Once you have your computer prepared to run Spin, you can create a new project by running the following command:
 
 ```shell
-spin new laravel-pro
+spin new davorminchorov/spin-template-laravel-pro-volumes
 ```
-We work very hard to have quality documentation. Be sure to read the docs to get the most out of Spin Pro:
+
+To add it to an existing Laravel project instead:
+
+```shell
+spin init davorminchorov/spin-template-laravel-pro-volumes
+```
+
+To use a local checkout of this repository without pushing it anywhere:
+
+```shell
+spin new --local ~/Code/GitHub/spin-template-laravel-pro-volumes my-project
+```
+
+The official Spin Pro documentation applies to this template as well:
 
 [Read the docs →](https://getspin.pro/docs)
 
@@ -37,7 +69,8 @@ We work very hard to have quality documentation. Be sure to read the docs to get
 - **[Website](https://getspin.pro/)** overview of the product.
 - **[Docs](https://getspin.pro/docs)** for a deep-dive on how to use the product.
 - **[Discord](https://serversideup.net/discord)** for friendly support from the community and the team.
-- **[GitHub](https://github.com/serversideup/spin-template-laravel-pro)** for source code, bug reports, and project management.
+- **[Official template on GitHub](https://github.com/serversideup/spin-template-laravel-pro)** for the upstream source code.
+- **[This template on GitHub](https://github.com/davorminchorov/spin-template-laravel-pro-volumes)** for the named-volumes fork.
 - **[Get Professional Help](https://serversideup.net/professional-support)** - If you need video + screen-sharing support, we offer that too.
 
 ## ❤️ Contributing
