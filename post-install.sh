@@ -10,24 +10,41 @@ SPIN_PHP_DOCKER_BASE_IMAGE="${SPIN_PHP_DOCKER_BASE_IMAGE:-serversideup/php:${SPI
 # Set project variables
 spin_template_type="pro"
 spin_database="sqlite"
-javascript_package_manager="yarn"
+javascript_package_manager="npm"
 php_dockerfile="Dockerfile.php"
 project_dir=${SPIN_PROJECT_DIRECTORY:-"$(pwd)/template"}
 template_src_dir=${SPIN_TEMPLATE_TEMPORARY_SRC_DIR:-"$(pwd)"}
 
-# Initialize the service variables
-horizon=""
+# Initialize the service variables.
+# Pre-selected: Task Scheduling, Horizon (with Redis) and MySQL.
+# Every selection can still be toggled in the prompts below.
+horizon="1"
 queue=""
 reverb=""
-schedule=""
+schedule="1"
 sqlite=""
-mysql=""
+mysql="1"
 mariadb=""
 meilisearch=""
 postgresql=""
-redis=""
+redis="1"
 octane=""
 use_github_actions=""
+
+# Laravel Octane is pre-selected when FrankenPHP was chosen in install.sh
+if [[ "$SPIN_PHP_VARIATION" == "frankenphp" ]]; then
+    octane="1"
+fi
+
+# Project name derived from the project directory, used for hostnames,
+# the Docker network and the database credentials.
+# spin_project_slug: lowercase, hyphens allowed (hostnames, network name)
+# spin_project_key:  lowercase alphanumerics only (database, user, password)
+spin_project_name=$(basename "$project_dir")
+spin_project_slug=$(echo "$spin_project_name" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g; s/^-*//; s/-*$//')
+spin_project_key=$(echo "$spin_project_slug" | tr -d '-')
+[[ -z "$spin_project_slug" ]] && spin_project_slug="laravel"
+[[ -z "$spin_project_key" ]] && spin_project_key="laravel"
 
 ###############################################
 # Functions
@@ -403,8 +420,11 @@ select_php_extensions() {
     echo "Enter additional extensions as a comma-separated list (no spaces).${RESET}"
     echo "Example: gd,imagick,intl"
     echo ""
-    echo "${BOLD}${YELLOW}Enter comma separated extensions below or press ${BOLD}${BLUE}ENTER${RESET} ${BOLD}${YELLOW}to use default extensions.${RESET}"
+    echo "${BLUE}This template adds by default:${RESET} gd, intl"
+    echo ""
+    echo "${BOLD}${YELLOW}Enter comma separated extensions below or press ${BOLD}${BLUE}ENTER${RESET} ${BOLD}${YELLOW}to use the defaults (gd, intl).${RESET}"
     read -r extensions_input
+    [[ -z "$extensions_input" ]] && extensions_input="gd,intl"
 
     # Remove spaces and split into array
     IFS=',' read -r -a php_extensions <<< "${extensions_input// /}"
@@ -537,9 +557,9 @@ configure_mariadb() {
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mariadb"
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_HOST" "DB_HOST=mariadb"
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PORT" "DB_PORT=3306"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "DB_DATABASE=laravel"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_USERNAME" "DB_USERNAME=root"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "DB_PASSWORD=rootpassword"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "DB_DATABASE=${spin_project_key}"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_USERNAME" "DB_USERNAME=${spin_project_key}"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "DB_PASSWORD=${spin_project_key}"
 }
 
 configure_meilisearch() {
@@ -575,9 +595,9 @@ configure_mysql() {
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=mysql"
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_HOST" "DB_HOST=mysql"
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PORT" "DB_PORT=3306"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "DB_DATABASE=laravel"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_USERNAME" "DB_USERNAME=root"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "DB_PASSWORD=rootpassword"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "DB_DATABASE=${spin_project_key}"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_USERNAME" "DB_USERNAME=${spin_project_key}"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "DB_PASSWORD=${spin_project_key}"
 }
 
 configure_postgresql() {
@@ -589,9 +609,9 @@ configure_postgresql() {
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "DB_CONNECTION" "DB_CONNECTION=pgsql"
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_HOST" "DB_HOST=postgres"
     line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PORT" "DB_PORT=5432"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "DB_DATABASE=laravel"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_USERNAME" "DB_USERNAME=postgres"
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "DB_PASSWORD=postgrespassword"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_DATABASE" "DB_DATABASE=${spin_project_key}"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_USERNAME" "DB_USERNAME=${spin_project_key}"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "# DB_PASSWORD" "DB_PASSWORD=${spin_project_key}"
 }
 
 configure_queue() {
@@ -630,7 +650,7 @@ configure_reverb() {
     $COMPOSE_CMD run --rm --remove-orphans --no-deps node ${javascript_package_manager} run build
 
     echo "$service_name: Preparing env files for Reverb..."
-    line_in_file --action replace --file ".env" "REVERB_HOST" "REVERB_HOST=\"reverb.dev.test\""
+    line_in_file --action replace --file ".env" "REVERB_HOST" "REVERB_HOST=\"reverb.${spin_project_slug}.test\""
     line_in_file --action replace --file ".env" "REVERB_PORT" "REVERB_PORT=443"
     line_in_file --action replace --file ".env" "REVERB_SCHEME" "REVERB_SCHEME=https"
 
@@ -638,7 +658,7 @@ configure_reverb() {
     line_in_file --action replace --file ".env.example" "REVERB_APP_ID" "REVERB_APP_ID=999999"
     line_in_file --action replace --file ".env.example" "REVERB_APP_KEY" "REVERB_APP_KEY=changemeabcde1234567"
     line_in_file --action replace --file ".env.example" "REVERB_APP_SECRET" "REVERB_APP_SECRET=changeme123456789abcde"
-    line_in_file --action replace --file ".env.example" "REVERB_HOST" "REVERB_HOST=\"reverb.dev.test\""
+    line_in_file --action replace --file ".env.example" "REVERB_HOST" "REVERB_HOST=\"reverb.${spin_project_slug}.test\""
     line_in_file --action replace --file ".env.example" "REVERB_PORT" "REVERB_PORT=443"
     line_in_file --action replace --file ".env.example" "REVERB_SCHEME" "REVERB_SCHEME=https"
     line_in_file --action replace --file ".env.example" "VITE_REVERB_APP_KEY" "VITE_REVERB_APP_KEY=\"\${REVERB_APP_KEY}\""
@@ -717,7 +737,7 @@ configure_vite() {
             print "    server: {"
             print "        host: '"'"'0.0.0.0'"'"',"
             print "        hmr: {"
-            print "            host: '"'"'vite.dev.test'"'"',"
+            print "            host: '"'"'vite.'"$spin_project_slug"'.test'"'"',"
             print "            clientPort: 443,"
             print "        },"
             print "        https: {"
@@ -735,6 +755,36 @@ configure_vite() {
     ' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
 
     echo "vite: vite.config.js updated successfully."
+}
+
+configure_project_name() {
+    local dev_compose="$project_dir/docker-compose.dev.yml"
+    local file=""
+
+    echo "${BLUE}Applying the project name \"${spin_project_slug}\" to hostnames, network and credentials...${RESET}"
+
+    # Hostnames: laravel.dev.test -> <project>.test, vite.dev.test -> vite.<project>.test, etc.
+    for file in "$dev_compose" "$project_dir/.env" "$project_dir/.env.example" "$project_dir/vite.config.js" "$project_dir/vite.config.ts"; do
+        [[ -f "$file" ]] || continue
+        sed_inplace \
+            -e "s/laravel\.dev\.test/${spin_project_slug}.test/g" \
+            -e "s/vite\.dev\.test/vite.${spin_project_slug}.test/g" \
+            -e "s/mailpit\.dev\.test/mailpit.${spin_project_slug}.test/g" \
+            -e "s/reverb\.dev\.test/reverb.${spin_project_slug}.test/g" \
+            -e "s/meilisearch\.dev\.test/meilisearch.${spin_project_slug}.test/g" \
+            "$file"
+    done
+
+    # Docker network: "development" -> "<project>" (build targets named "development" are untouched)
+    sed_inplace \
+        -e "s/^\( *\)development:\$/\1${spin_project_slug}:/" \
+        -e "s/^\( *\)- development\$/\1- ${spin_project_slug}/" \
+        "$dev_compose"
+
+    # Database defaults in the dev compose file: ${DB_DATABASE:-laravel} -> ${DB_DATABASE:-<project>}
+    sed_inplace -e "s/:-laravel}/:-${spin_project_key}}/g" "$dev_compose"
+
+    add_user_todo_item "Add to /etc/hosts: 127.0.0.1 ${spin_project_slug}.test mailpit.${spin_project_slug}.test vite.${spin_project_slug}.test reverb.${spin_project_slug}.test meilisearch.${spin_project_slug}.test"
 }
 
 docker_yq() {
@@ -946,9 +996,10 @@ if [ "$spin_template_type" == "pro" ]; then
     fi
 
     # Configure APP_URL
-    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "APP_URL" "APP_URL=https://laravel.dev.test"
+    line_in_file --action replace --file "$project_dir/.env" --file "$project_dir/.env.example" "APP_URL" "APP_URL=https://${spin_project_slug}.test"
 
     configure_mailpit
+    configure_project_name
 fi
 
 # Configure Server Contact

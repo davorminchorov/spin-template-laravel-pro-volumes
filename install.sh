@@ -166,7 +166,7 @@ prompt_php_variation() {
     local variation_choice
 
     # Set default if not already set
-    [[ -z "$SPIN_PHP_VARIATION" ]] && SPIN_PHP_VARIATION="fpm-nginx"
+    [[ -z "$SPIN_PHP_VARIATION" ]] && SPIN_PHP_VARIATION="frankenphp"
 
     while true; do
         clear
@@ -222,7 +222,7 @@ prompt_php_os() {
     local os_choice
 
     # Set default if not already set
-    [[ -z "$SPIN_PHP_OS" ]] && SPIN_PHP_OS="debian"
+    [[ -z "$SPIN_PHP_OS" ]] && SPIN_PHP_OS="alpine"
 
     # Apache only supports Debian - skip the prompt
     if [[ "$SPIN_PHP_VARIATION" == "fpm-apache" ]]; then
@@ -366,6 +366,7 @@ SERVER_CONTACT=$(prompt_and_update_file \
     --title "🤖 Server Contact" \
     --details "Set an email contact who should be notified for Let's Encrypt SSL renewals and other system alerts." \
     --prompt "Please enter your email" \
+    --search-default "${SPIN_SERVER_CONTACT:-davorminchorov@gmail.com}" \
     --output-only \
     --validate "email")
 

@@ -22,7 +22,42 @@ SQLite is unchanged. The whole project folder is bind mounted into the `php` con
 
 Named volumes are created per project (Docker Compose prefixes them with the project name) and survive `spin down`. To wipe the data, run `spin down --volumes` or remove the volume with `docker volume rm`.
 
-Everything else (install prompts, blocks, GitHub Actions, production compose files) is identical to the official template, and this repository tracks it as the `upstream` git remote.
+### Project-specific names instead of `laravel`
+The official template names everything `laravel` and expects you to rename things by hand afterwards. This template derives two names from the project directory (for example `my-app`):
+
+- `my-app` (lowercase, hyphens kept) for hostnames and the Docker network
+- `myapp` (hyphens removed) for the database name, user and password
+
+and applies them during install:
+
+| What                              | Official template                        | This template                                   |
+|-----------------------------------|------------------------------------------|-------------------------------------------------|
+| App URL / Traefik host            | `laravel.dev.test`                       | `my-app.test`                                   |
+| Vite, Mailpit, Reverb, Meilisearch| `vite.dev.test`, `mailpit.dev.test`, ... | `vite.my-app.test`, `mailpit.my-app.test`, ...  |
+| Docker network (dev)              | `development`                            | `my-app`                                        |
+| Database name / user / password   | `laravel` / `root` / `rootpassword`      | `myapp` / `myapp` / `myapp`                     |
+| Database root password (dev)      | `rootpassword`                           | `root`                                          |
+
+Database and Redis credentials in `docker-compose.dev.yml` read `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_ROOT_PASSWORD` and `REDIS_PASSWORD` from `.env`, with the values above as fallbacks, so the compose file and Laravel always agree.
+
+Namespacing every hostname under `<project>.test` means several projects can keep their Traefik aliases without clashing. The installer prints the `/etc/hosts` line to add when it finishes.
+
+### Different defaults in the installer
+Every prompt still appears. Only the pre-selected answers differ:
+
+| Prompt                    | Official default | This template                                  |
+|---------------------------|------------------|------------------------------------------------|
+| Server variation          | fpm-nginx        | frankenphp                                     |
+| Operating system          | debian           | alpine                                         |
+| PHP extensions            | none             | `gd,intl`                                      |
+| Laravel features          | none             | Task Scheduling, Horizon, Octane (if FrankenPHP)|
+| Database                  | none             | MySQL, Redis                                   |
+| JavaScript package manager| yarn             | npm                                            |
+| Server contact            | empty            | `davorminchorov@gmail.com` (or `SPIN_SERVER_CONTACT`) |
+
+The Traefik dashboard port (`8080:8080`) is also enabled in `docker-compose.dev.yml` instead of commented out.
+
+Everything else (blocks, GitHub Actions, production compose files) is identical to the official template, and this repository tracks it as the `upstream` git remote.
 
 ## 🌎 Default Development Environment Config
 > [!CAUTION]

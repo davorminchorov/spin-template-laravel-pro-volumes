@@ -11,9 +11,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
     environment:
-        POSTGRES_DB: "laravel"
-        POSTGRES_USER: "postgres"
-        POSTGRES_PASSWORD: "postgrespassword"
+        POSTGRES_DB: ${DB_DATABASE:-laravel}
+        POSTGRES_USER: ${DB_USERNAME:-laravel}
+        POSTGRES_PASSWORD: ${DB_PASSWORD:-laravel}
     ports:
       - target: 5432
         published: 5432

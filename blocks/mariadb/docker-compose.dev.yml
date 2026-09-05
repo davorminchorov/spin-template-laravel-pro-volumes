@@ -11,10 +11,10 @@ services:
     volumes:
       - mariadb_data:/var/lib/mysql
     environment:
-        MARIADB_ROOT_PASSWORD: "rootpassword"
-        MARIADB_DATABASE: "laravel"
-        MARIADB_USER: "mysqluser"
-        MARIADB_PASSWORD: "mysqlpassword"
+        MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+        MARIADB_DATABASE: ${DB_DATABASE:-laravel}
+        MARIADB_USER: ${DB_USERNAME:-laravel}
+        MARIADB_PASSWORD: ${DB_PASSWORD:-laravel}
     ports:
       - target: 3306
         published: 3306
